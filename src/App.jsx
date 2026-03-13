@@ -37,6 +37,7 @@ const roleMenuAccess = {
   admin: ["dashboard", "form", "list", "report", "users"],
   user: ["dashboard", "form", "list", "report"],
   driver: ["form", "list"],
+  partner: ["dashboard", "report"], // Partner ເຫັນສະເພາະ ໜ້າຫຼັກ ແລະ ລາຍງານ
 };
 
 // --- Helper Functions: ສ້າງ ID ແລະ ຊື່ໄຟລ໌ຮູບແບບໃໝ່ ---
@@ -92,22 +93,25 @@ const generateImageFilename = (type, plate, dateStr, allLogs, currentId) => {
   return `${type}_${plate}_${prefixDate}${String(seq).padStart(2, "0")}`;
 };
 
-// --- Helper Function: ແປງວັນທີເປັນ YYYY-MM-DD ຕາມ Timezone ທ້ອງຖິ່ນ ---
+// --- Helper Function: ແປງວັນທີເປັນ YYYY-MM-DD ຕາມ Timezone ທ້ອງຖິ່ນ (ແກ້ບັນຫາວັນທີຊ້າໄປ 1 ມື້) ---
 const getLocalYYYYMMDD = (dateInput) => {
   if (!dateInput) return "";
-  let dStr = dateInput;
-  // ຕັດເວລາອອກກ່ອນສະເໝີ ຖ້າເປັນ ISO String ເຊັ່ນ 2026-03-11T17:00:00.000Z
-  if (typeof dStr === "string" && dStr.includes("T")) {
-    dStr = dStr.split("T")[0];
+
+  // ສ້າງ Date object ເພື່ອໃຫ້ Browser ຄຳນວນ Timezone ອັດຕະໂນມັດ
+  let d = new Date(dateInput);
+
+  if (!isNaN(d.getTime())) {
+    const yyyy = d.getFullYear();
+    const mm = String(d.getMonth() + 1).padStart(2, "0");
+    const dd = String(d.getDate()).padStart(2, "0");
+    return `${yyyy}-${mm}-${dd}`;
   }
-  let d = new Date(dStr);
-  if (isNaN(d.getTime())) {
-    return typeof dStr === "string" ? dStr : "";
+
+  // Fallback ຖ້າຫາກແປງບໍ່ໄດ້
+  if (typeof dateInput === "string") {
+    return dateInput.split("T")[0];
   }
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
+  return "";
 };
 
 // --- Helper Function: ແປງຮູບແບບວັນທີເປັນ DD/MM/YYYY ---
@@ -120,7 +124,7 @@ const formatDateDisplay = (dateInput) => {
   return dateInput;
 };
 
-// --- Helper Function: ແປງຕົວເລກເປັນຮູບແບບ XXX,XXX.XX ---
+// --- Helper Function: ແປງຕົວເລກເປັນຮູບແບບ XXX,XXX.XX (ສຳລັບລິດ, ອັດຕາສິ້ນເປືອງ) ---
 const formatNumber = (val) => {
   const num = Number(val);
   if (isNaN(num)) return "0.00";
@@ -128,6 +132,13 @@ const formatNumber = (val) => {
     minimumFractionDigits: 2,
     maximumFractionDigits: 2,
   });
+};
+
+// --- Helper Function: ແປງຕົວເລກເປັນຮູບແບບ XXX,XXX ບໍ່ມີຈຸດທົດສະນິຍົມ (ສຳລັບເງິນ, ເລກກິໂລ) ---
+const formatInteger = (val) => {
+  const num = Number(val);
+  if (isNaN(num)) return "0";
+  return num.toLocaleString("en-US", { maximumFractionDigits: 0 });
 };
 
 export default function FuelApp() {
@@ -568,9 +579,9 @@ export default function FuelApp() {
           >
             <div className="h-full flex flex-col font-lao">
               <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 bg-orange-500 text-white flex-shrink-0">
-                <div className="flex items-center space-x-2 font-bold text-lg md:text-xl">
+                <div className="flex items-center space-x-2 font-bold text-base md:text-lg">
                   <Droplet className="w-5 h-5 md:w-6 md:h-6" />
-                  <span>FuelLog System</span>
+                  <span className="truncate">ລະບົບບັນທຶກການຕື່ມນ້ຳມັນ</span>
                 </div>
                 <button
                   className="md:hidden"
@@ -761,7 +772,9 @@ function Footer() {
       <div className="max-w-6xl mx-auto px-4 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs md:text-sm text-gray-500 font-lao">
         <div className="flex items-center space-x-2 mb-1 md:mb-0">
           <Droplet className="w-3 h-3 md:w-4 md:h-4 text-orange-500" />
-          <span className="font-bold text-gray-700">FuelLog System</span>
+          <span className="font-bold text-gray-700">
+            P AND P Trading Export-Import Co., Ltd
+          </span>
           <span>© {currentYear}</span>
         </div>
         <div className="text-center md:text-right">
@@ -821,7 +834,6 @@ function MonthlyChart({ data }) {
 
   return (
     <div className="w-full overflow-x-auto">
-      {/* ປັບ min-w ໃຫ້ນ້ອຍລົງ ເພື່ອໃຫ້ກາຟສາມາດຫຍໍ້ໄດ້ດີຂຶ້ນໃນມືຖື */}
       <div className="min-w-[450px] md:min-w-[600px] bg-white">
         <svg
           viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
@@ -1050,7 +1062,7 @@ function Dashboard({ logs, cars }) {
 
   return (
     <div className="space-y-4 md:space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-      <div className="grid grid-cols-2 gap-3 md:gap-6">
+      <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-6">
         <div className="bg-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-3 md:space-x-4 hover:shadow-md transition overflow-hidden">
           <div className="bg-purple-100 p-2.5 md:p-4 rounded-full text-purple-500 shrink-0">
             <Car className="w-5 h-5 md:w-8 md:h-8" />
@@ -1063,7 +1075,7 @@ function Dashboard({ logs, cars }) {
               className="text-lg md:text-2xl lg:text-3xl font-black text-gray-800 truncate"
               title={totalCars}
             >
-              {totalCars}
+              {formatInteger(totalCars)}
             </p>
           </div>
         </div>
@@ -1093,9 +1105,9 @@ function Dashboard({ logs, cars }) {
             </p>
             <p
               className="text-lg md:text-2xl lg:text-3xl font-black text-gray-800 truncate"
-              title={formatNumber(totalCost)}
+              title={formatInteger(totalCost)}
             >
-              {formatNumber(totalCost)}
+              {formatInteger(totalCost)}
             </p>
           </div>
         </div>
@@ -1111,7 +1123,7 @@ function Dashboard({ logs, cars }) {
               className="text-lg md:text-2xl lg:text-3xl font-black text-gray-800 truncate"
               title={logs.length}
             >
-              {logs.length}
+              {formatInteger(logs.length)}
             </p>
           </div>
         </div>
@@ -1199,7 +1211,7 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars }) {
       </div>
 
       <div className="p-4 md:p-5 border-b border-gray-100 bg-white grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5">
-        <div className="flex flex-col">
+        <div className="flex flex-col z-20 relative">
           <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
             ຄົ້ນຫາຕາມວັນທີ:
           </label>
@@ -1213,29 +1225,18 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars }) {
             <Filter className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-3 md:left-3.5 top-3" />
           </div>
         </div>
-        <div className="flex flex-col">
-          <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
-            ຄົ້ນຫາຕາມທະບຽນລົດ:
-          </label>
-          <div className="relative">
-            <select
-              value={filterPlate}
-              onChange={(e) => setFilterPlate(e.target.value)}
-              className="w-full pl-8 md:pl-10 pr-6 md:pr-8 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-xs md:text-sm appearance-none font-medium bg-gray-50 focus:bg-white"
-            >
-              <option value="">-- ທັງໝົດ --</option>
-              {cars &&
-                cars.map((plate) => (
-                  <option key={plate} value={plate}>
-                    {plate}
-                  </option>
-                ))}
-            </select>
-            <Search className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-3 md:left-3.5 top-3" />
-            <ChevronDown className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute right-3 md:right-3.5 top-3 pointer-events-none" />
-          </div>
+        <div className="flex flex-col z-20 relative">
+          <SearchableSelect
+            label="ຄົ້ນຫາຕາມທະບຽນລົດ:"
+            placeholder="-- ທັງໝົດ --"
+            value={filterPlate}
+            options={cars}
+            onChange={(val) => setFilterPlate(val)}
+            showAllOption={true}
+            labelClassName="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2"
+          />
         </div>
-        <div className="flex items-end">
+        <div className="flex items-end z-10 relative">
           <button
             onClick={() => {
               setFilterDate("");
@@ -1251,7 +1252,7 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars }) {
 
       <div className="overflow-auto max-h-[65vh]">
         <table className="w-full text-left text-xs md:text-sm text-gray-600 whitespace-nowrap relative">
-          <thead className="bg-gray-50 text-gray-700 uppercase text-[10px] md:text-xs border-b border-gray-100 sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+          <thead className="bg-gray-50 text-gray-700 uppercase text-[10px] md:text-xs border-b border-gray-100 sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
             <tr>
               <th className="px-3 py-3 md:px-4 md:py-4 w-10 md:w-12 text-center text-gray-500 font-bold bg-gray-50">
                 ລ/ດ
@@ -1311,10 +1312,10 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars }) {
                     {formatNumber(log.liters)}
                   </td>
                   <td className="px-3 py-3 md:px-6 md:py-4 text-orange-600 font-black">
-                    {formatNumber(log.actualPaid)}
+                    {formatInteger(log.actualPaid)}
                   </td>
                   <td className="px-3 py-3 md:px-6 md:py-4">
-                    {formatNumber(log.odometer)}
+                    {formatInteger(log.odometer)}
                   </td>
                   <td className="px-3 py-3 md:px-6 md:py-4 text-center">
                     <div className="flex justify-center space-x-1.5 md:space-x-2">
@@ -1486,17 +1487,20 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
               />
             </div>
 
-            <SearchableSelect
-              label="ທະບຽນລົດ (ສະເພາະລົດທີ່ໄດ້ຮັບສິດ)"
-              placeholder="-- ເລືອກ ຫຼື ພິມຄົ້ນຫາທະບຽນລົດ --"
-              value={formData.licensePlate}
-              options={cars}
-              onChange={(val) =>
-                handleChange({ target: { name: "licensePlate", value: val } })
-              }
-            />
+            <div className="z-20 relative">
+              <SearchableSelect
+                label="ທະບຽນລົດ (ສະເພາະລົດທີ່ໄດ້ຮັບສິດ)"
+                placeholder="-- ເລືອກ ຫຼື ພິມຄົ້ນຫາທະບຽນລົດ --"
+                value={formData.licensePlate}
+                options={cars}
+                onChange={(val) =>
+                  handleChange({ target: { name: "licensePlate", value: val } })
+                }
+                labelClassName="block text-xs md:text-sm font-bold text-gray-700 mb-1"
+              />
+            </div>
 
-            <div className="grid grid-cols-2 gap-3 md:gap-5">
+            <div className="grid grid-cols-2 gap-3 md:gap-5 z-10 relative">
               <div>
                 <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                   ຈຳນວນ (ລິດ)
@@ -1526,13 +1530,13 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
               </div>
             </div>
 
-            <div className="bg-orange-50 p-4 md:p-6 rounded-xl md:rounded-2xl space-y-3 md:space-y-4 border border-orange-100 shadow-inner">
+            <div className="bg-orange-50 p-4 md:p-6 rounded-xl md:rounded-2xl space-y-3 md:space-y-4 border border-orange-100 shadow-inner z-0 relative">
               <div className="flex justify-between items-center text-xs md:text-sm">
                 <span className="text-gray-600 font-medium">
                   ລາຄາລວມ (Auto):
                 </span>
                 <span className="text-base md:text-lg font-black text-gray-800">
-                  {formatNumber(formData.totalPrice)} ກີບ
+                  {formatInteger(formData.totalPrice)} ກີບ
                 </span>
               </div>
               <div>
@@ -1556,7 +1560,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                   className={`text-base md:text-lg font-black ${Number(formData.difference) < 0 ? "text-red-500" : "text-green-600"}`}
                 >
                   {Number(formData.difference) > 0 ? "+" : ""}
-                  {formatNumber(formData.difference)} ກີບ
+                  {formatInteger(formData.difference)} ກີບ
                 </span>
               </div>
             </div>
@@ -1601,6 +1605,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
             </div>
 
             <div className="grid grid-cols-2 gap-3 md:gap-5 pt-2 md:pt-3">
+              {/* ຊ່ອງອັບໂຫຼດ ຮູບບິນ */}
               <div className="border-2 border-dashed border-gray-300 rounded-xl md:rounded-2xl p-0 hover:border-orange-400 hover:bg-orange-50 transition relative overflow-hidden group h-28 md:h-40 flex flex-col justify-center items-center cursor-pointer bg-gray-50">
                 {formData.receiptUrl ? (
                   <div className="absolute inset-0 w-full h-full z-10">
@@ -1634,6 +1639,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                 />
               </div>
 
+              {/* ຊ່ອງອັບໂຫຼດ ຮູບເລກກິໂລ */}
               <div className="border-2 border-dashed border-gray-300 rounded-xl md:rounded-2xl p-0 hover:border-orange-400 hover:bg-orange-50 transition relative overflow-hidden group h-28 md:h-40 flex flex-col justify-center items-center cursor-pointer bg-gray-50">
                 {formData.odometerUrl ? (
                   <div className="absolute inset-0 w-full h-full z-10">
@@ -1689,7 +1695,15 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
   );
 }
 
-function SearchableSelect({ label, value, onChange, options, placeholder }) {
+function SearchableSelect({
+  label,
+  value,
+  onChange,
+  options,
+  placeholder,
+  showAllOption = false,
+  labelClassName = "block text-xs md:text-sm font-bold text-gray-700 mb-1",
+}) {
   const [isOpen, setIsOpen] = React.useState(false);
   const [searchTerm, setSearchTerm] = React.useState("");
   const containerRef = React.useRef(null);
@@ -1718,30 +1732,30 @@ function SearchableSelect({ label, value, onChange, options, placeholder }) {
   };
 
   return (
-    <div className="relative" ref={containerRef}>
-      <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
-        {label}
-      </label>
+    <div className="relative w-full" ref={containerRef}>
+      {label && <label className={labelClassName}>{label}</label>}
       <div
-        className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl bg-gray-50 hover:bg-white flex justify-between items-center cursor-pointer focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition text-sm md:text-base"
+        className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg md:rounded-xl bg-gray-50 hover:bg-white flex justify-between items-center cursor-pointer focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition text-sm md:text-base min-h-[40px] md:min-h-[48px]"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span
           className={
-            value ? "text-gray-800 font-bold" : "text-gray-400 font-medium"
+            value
+              ? "text-gray-800 font-bold truncate"
+              : "text-gray-400 font-medium truncate"
           }
         >
           {value || placeholder}
         </span>
         <ChevronDown
-          className={`w-4 h-4 md:w-5 h-5 text-gray-400 transition-transform ${isOpen ? "rotate-180" : ""}`}
+          className={`w-4 h-4 md:w-5 h-5 text-gray-400 transition-transform flex-shrink-0 ml-2 ${isOpen ? "rotate-180" : ""}`}
         />
       </div>
 
       {isOpen && (
         <div className="absolute z-50 w-full mt-1.5 md:mt-2 bg-white border border-gray-200 rounded-xl md:rounded-2xl shadow-xl overflow-hidden animate-in fade-in zoom-in-95 duration-150">
           <div className="p-2.5 md:p-3 border-b border-gray-100 flex items-center space-x-2 md:space-x-3 bg-gray-50">
-            <Search className="w-4 h-4 md:w-5 h-5 text-gray-400" />
+            <Search className="w-4 h-4 md:w-5 h-5 text-gray-400 shrink-0" />
             <input
               autoFocus
               className="w-full text-xs md:text-sm outline-none py-1 bg-transparent font-bold"
@@ -1752,6 +1766,14 @@ function SearchableSelect({ label, value, onChange, options, placeholder }) {
             />
           </div>
           <div className="max-h-60 overflow-y-auto">
+            {showAllOption && (
+              <div
+                className={`px-4 md:px-5 py-2.5 md:py-3 text-xs md:text-sm cursor-pointer transition border-b border-gray-50 ${!value ? "bg-orange-50 text-orange-600 font-bold" : "text-gray-700 hover:bg-gray-50 hover:text-orange-500 font-bold"}`}
+                onClick={() => handleSelect("")}
+              >
+                -- ທັງໝົດ --
+              </div>
+            )}
             {filteredOptions.length > 0 ? (
               filteredOptions.map((opt) => (
                 <div
@@ -1888,13 +1910,14 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
             >
               <option value="user">User</option>
               <option value="driver">Driver</option>
+              <option value="partner">Partner</option>
               <option value="admin">Admin</option>
             </select>
           </div>
 
           <div className="md:col-span-2 lg:col-span-4 mt-2 p-4 md:p-5 bg-gray-50 rounded-xl border border-gray-200">
             <label className="text-xs md:text-sm font-bold text-gray-700 block mb-2 md:mb-3">
-              ກຳນົດສິດເຫັນຂໍ້ມູນທະບຽນລົດ (ສຳລັບ User/Driver)
+              ກຳນົດສິດເຫັນຂໍ້ມູນທະບຽນລົດ (ສຳລັບ User/Driver/Partner)
             </label>
             {formData.role === "admin" ? (
               <div className="flex items-center space-x-2 text-xs md:text-sm text-orange-600 bg-orange-100/50 p-2.5 md:p-3 rounded-lg">
@@ -2001,7 +2024,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
                     </td>
                     <td className="px-3 py-3 md:px-6 md:py-4">
                       <span
-                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold tracking-wide ${u.role === "admin" ? "bg-purple-100 text-purple-600" : u.role === "driver" ? "bg-blue-100 text-blue-600" : "bg-green-100 text-green-600"}`}
+                        className={`px-2 py-0.5 md:px-3 md:py-1 rounded-full text-[10px] md:text-xs font-bold tracking-wide ${u.role === "admin" ? "bg-purple-100 text-purple-600" : u.role === "partner" ? "bg-teal-100 text-teal-600" : u.role === "driver" ? "bg-blue-100 text-blue-600" : "bg-green-100 text-green-600"}`}
                       >
                         {u.role.toUpperCase()}
                       </span>
@@ -2192,7 +2215,7 @@ function FuelReport({ logs, cars }) {
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
-          <div className="flex flex-col">
+          <div className="flex flex-col z-20 relative">
             <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
               ຕັ້ງແຕ່ວັນທີ:
             </label>
@@ -2203,7 +2226,7 @@ function FuelReport({ logs, cars }) {
               className="px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition"
             />
           </div>
-          <div className="flex flex-col">
+          <div className="flex flex-col z-20 relative">
             <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
               ເຖິງວັນທີ:
             </label>
@@ -2214,25 +2237,18 @@ function FuelReport({ logs, cars }) {
               className="px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition"
             />
           </div>
-          <div className="flex flex-col">
-            <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
-              ທະບຽນລົດ:
-            </label>
-            <select
+          <div className="flex flex-col z-20 relative">
+            <SearchableSelect
+              label="ທະບຽນລົດ:"
+              placeholder="-- ທັງໝົດ --"
               value={selectedPlate}
-              onChange={(e) => setSelectedPlate(e.target.value)}
-              className="px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition"
-            >
-              <option value="">-- ທັງໝົດ --</option>
-              {cars &&
-                cars.map((plate) => (
-                  <option key={plate} value={plate}>
-                    {plate}
-                  </option>
-                ))}
-            </select>
+              options={cars}
+              onChange={(val) => setSelectedPlate(val)}
+              showAllOption={true}
+              labelClassName="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2"
+            />
           </div>
-          <div className="flex items-end">
+          <div className="flex items-end z-10 relative">
             <button
               onClick={() => {
                 setStartDate("");
@@ -2268,9 +2284,9 @@ function FuelReport({ logs, cars }) {
             </span>
             <span
               className="text-lg md:text-2xl font-black text-green-600 truncate"
-              title={`${formatNumber(grandTotalCost)} ກີບ`}
+              title={`${formatInteger(grandTotalCost)} ກີບ`}
             >
-              {formatNumber(grandTotalCost)}{" "}
+              {formatInteger(grandTotalCost)}{" "}
               <span className="text-xs md:text-sm font-bold">ກີບ</span>
             </span>
           </div>
@@ -2304,7 +2320,7 @@ function FuelReport({ logs, cars }) {
         <div className="overflow-x-auto border border-gray-100 rounded-xl">
           <div className="overflow-auto max-h-[65vh]">
             <table className="w-full text-left text-xs md:text-sm text-gray-600 whitespace-nowrap relative">
-              <thead className="bg-gray-50 text-gray-700 uppercase text-[10px] md:text-xs border-b border-gray-100 sticky top-0 z-20 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+              <thead className="bg-gray-50 text-gray-700 uppercase text-[10px] md:text-xs border-b border-gray-100 sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
                 <tr>
                   <th className="px-3 py-3 md:px-4 md:py-4 w-10 md:w-12 text-center text-gray-500 font-bold bg-gray-50">
                     ລ/ດ
@@ -2371,7 +2387,7 @@ function FuelReport({ logs, cars }) {
                             {formatNumber(row.liters)}
                           </td>
                           <td className="px-3 py-3 md:px-6 md:py-4 text-right font-black text-green-600">
-                            {formatNumber(row.actualPaid)}
+                            {formatInteger(row.actualPaid)}
                           </td>
                         </tr>
 
@@ -2429,10 +2445,10 @@ function FuelReport({ logs, cars }) {
                                             {formatNumber(det.liters)}
                                           </td>
                                           <td className="px-2 py-2 md:px-4 md:py-2.5">
-                                            {formatNumber(det.pricePerLiter)}
+                                            {formatInteger(det.pricePerLiter)}
                                           </td>
                                           <td className="px-2 py-2 md:px-4 md:py-2.5 font-bold text-green-600">
-                                            {formatNumber(det.actualPaid)}
+                                            {formatInteger(det.actualPaid)}
                                           </td>
                                           <td className="px-2 py-2 md:px-4 md:py-2.5">
                                             {formatNumber(det.distance)}
