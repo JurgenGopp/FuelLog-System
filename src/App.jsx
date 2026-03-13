@@ -29,11 +29,10 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+import LOGO_URL from "./assets/Logo_P&P.jpg";
 // ເຊື່ອມຕໍ່ກັບ GAS API URL ຂອງທ່ານ
 const API_URL =
   "https://script.google.com/macros/s/AKfycbxUEqs7nHH2Mz6zp3CzwDNVwLqXwA1S8w4SGobcflKJ56-EaYNm3RXvK8nAiCGENg/exec";
-const LOGO_URL =
-  "https://drive.google.com/uc?export=view&id=192yEGEA_z0E4dGbqHd3ae6kyTRriLmzm";
 
 // --- ກຳນົດສິດການເຂົ້າເຖິງເມນູຂອງແຕ່ລະ Role ---
 const roleMenuAccess = {
