@@ -32,6 +32,8 @@ import {
 // ເຊື່ອມຕໍ່ກັບ GAS API URL ຂອງທ່ານ
 const API_URL =
   "https://script.google.com/macros/s/AKfycbxUEqs7nHH2Mz6zp3CzwDNVwLqXwA1S8w4SGobcflKJ56-EaYNm3RXvK8nAiCGENg/exec";
+const LOGO_URL =
+  "https://drive.google.com/uc?export=view&id=192yEGEA_z0E4dGbqHd3ae6kyTRriLmzm";
 
 // --- ກຳນົດສິດການເຂົ້າເຖິງເມນູຂອງແຕ່ລະ Role ---
 const roleMenuAccess = {
@@ -531,9 +533,11 @@ export default function FuelApp() {
           <div className="flex-1 flex items-center justify-center p-4 w-full">
             <div className="bg-white p-6 md:p-8 rounded-2xl shadow-xl w-full max-w-md border-t-4 border-orange-500">
               <div className="flex justify-center mb-5 md:mb-6">
-                <div className="bg-orange-100 p-3 rounded-full">
-                  <Droplet className="w-8 h-8 md:w-10 md:h-10 text-orange-500" />
-                </div>
+                <img
+                  src={LOGO_URL}
+                  alt="Logo"
+                  className="h-16 md:h-20 object-contain"
+                />
               </div>
               <h2 className="text-xl md:text-2xl font-bold text-center text-gray-800 mb-6 md:mb-8 font-lao">
                 ເຂົ້າສູ່ລະບົບ - ບັນທຶກນ້ຳມັນ
@@ -777,8 +781,12 @@ function Footer() {
     <footer className="w-full bg-white border-t border-gray-200 py-3 md:py-4 flex-shrink-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
       <div className="max-w-6xl mx-auto px-4 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs md:text-sm text-gray-500 font-lao">
         <div className="flex items-center space-x-2 mb-1 md:mb-0">
-          {/* <Droplet className="w-3 h-3 md:w-4 md:h-4 text-orange-500" /> */}
-          <span className="font-bold text-orange-600">
+          <img
+            src={LOGO_URL}
+            alt="Logo"
+            className="h-5 md:h-6 object-contain"
+          />
+          <span className="font-bold text-gray-700">
             P AND P Trading Export-Import Co., Ltd
           </span>
           <span>© {currentYear}</span>
@@ -786,9 +794,7 @@ function Footer() {
         <div className="text-center md:text-right">
           <p>
             ພັດທະນາໂດຍ:{" "}
-            <span className="font-semibold text-orange-600">
-              K. VANSOUANSENGPHET
-            </span>
+            <span className="font-semibold text-orange-600">ທີມງານພັດທະນາ</span>
           </p>
         </div>
       </div>
