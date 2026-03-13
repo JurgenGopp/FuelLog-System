@@ -26,6 +26,7 @@ import {
   ArrowDown,
   ExternalLink,
   Car,
+  RefreshCw,
 } from "lucide-react";
 
 // ເຊື່ອມຕໍ່ກັບ GAS API URL ຂອງທ່ານ
@@ -722,10 +723,15 @@ export default function FuelApp() {
                     setView={setView}
                     role={user.role}
                     cars={visibleCars}
+                    onRefresh={loadInitialData}
                   />
                 )}
                 {view === "report" && hasAccess("report") && (
-                  <FuelReport logs={visibleLogs} cars={visibleCars} />
+                  <FuelReport
+                    logs={visibleLogs}
+                    cars={visibleCars}
+                    onRefresh={loadInitialData}
+                  />
                 )}
                 {view === "form" && hasAccess("form") && (
                   <FuelForm
@@ -771,8 +777,8 @@ function Footer() {
     <footer className="w-full bg-white border-t border-gray-200 py-3 md:py-4 flex-shrink-0 z-10 shadow-[0_-4px_6px_-1px_rgba(0,0,0,0.02)]">
       <div className="max-w-6xl mx-auto px-4 lg:px-8 flex flex-col md:flex-row justify-between items-center text-xs md:text-sm text-gray-500 font-lao">
         <div className="flex items-center space-x-2 mb-1 md:mb-0">
-          <Droplet className="w-3 h-3 md:w-4 md:h-4 text-orange-500" />
-          <span className="font-bold text-gray-700">
+          {/* <Droplet className="w-3 h-3 md:w-4 md:h-4 text-orange-500" /> */}
+          <span className="font-bold text-orange-600">
             P AND P Trading Export-Import Co., Ltd
           </span>
           <span>© {currentYear}</span>
@@ -780,7 +786,9 @@ function Footer() {
         <div className="text-center md:text-right">
           <p>
             ພັດທະນາໂດຍ:{" "}
-            <span className="font-semibold text-orange-600">ທີມງານພັດທະນາ</span>
+            <span className="font-semibold text-orange-600">
+              K. VANSOUANSENGPHET
+            </span>
           </p>
         </div>
       </div>
@@ -788,8 +796,24 @@ function Footer() {
   );
 }
 
-// --- Component ສຳລັບສ້າງກາຟ ---
+// --- Component ສຳລັບສ້າງກາຟ (Responsive) ---
 function MonthlyChart({ data }) {
+  const containerRef = useRef(null);
+  const [viewBoxWidth, setViewBoxWidth] = useState(800);
+
+  useEffect(() => {
+    const updateWidth = () => {
+      if (containerRef.current) {
+        setViewBoxWidth(Math.max(containerRef.current.clientWidth, 300));
+      }
+    };
+
+    updateWidth();
+    window.addEventListener("resize", updateWidth);
+
+    return () => window.removeEventListener("resize", updateWidth);
+  }, []);
+
   if (!data || data.length === 0) {
     return (
       <div className="text-center py-12 md:py-16 text-xs md:text-sm text-gray-400 font-medium bg-gray-50 rounded-xl border border-dashed border-gray-200">
@@ -801,13 +825,18 @@ function MonthlyChart({ data }) {
   const maxLiters = Math.max(...data.map((d) => d.liters), 10) * 1.15;
   const maxCons = Math.max(...data.map((d) => d.consumption), 5) * 1.15;
 
-  const viewBoxWidth = 800;
-  const viewBoxHeight = 350;
-  const padding = { top: 40, right: 60, bottom: 40, left: 60 };
+  const viewBoxHeight = 300;
+  const isMobile = viewBoxWidth < 500;
+  const padding = {
+    top: 40,
+    right: isMobile ? 45 : 60,
+    bottom: 40,
+    left: isMobile ? 45 : 60,
+  };
   const width = viewBoxWidth - padding.left - padding.right;
   const height = viewBoxHeight - padding.top - padding.bottom;
 
-  const barWidth = Math.min(48, (width / data.length) * 0.5);
+  const barWidth = Math.min(48, (width / data.length) * (isMobile ? 0.6 : 0.5));
 
   const points = data.map((d, i) => {
     const x = padding.left + (i + 0.5) * (width / data.length);
@@ -819,11 +848,11 @@ function MonthlyChart({ data }) {
 
     if (Math.abs(litY - consY) < 25) {
       if (yLine < yBar) {
-        consY = yLine - 20;
+        consY = yLine - 18;
         litY = yBar + 15;
       } else {
-        litY = yBar - 20;
-        consY = yLine + 20;
+        litY = yBar - 18;
+        consY = yLine + 18;
       }
     }
 
@@ -833,11 +862,11 @@ function MonthlyChart({ data }) {
   const polylinePoints = points.map((p) => `${p.x},${p.yLine}`).join(" ");
 
   return (
-    <div className="w-full overflow-x-auto">
-      <div className="min-w-[450px] md:min-w-[600px] bg-white">
+    <div className="w-full" ref={containerRef}>
+      <div className="w-full bg-white">
         <svg
           viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
-          className="w-full h-auto font-lao"
+          className="w-full h-auto font-lao overflow-visible"
         >
           {/* Grid Lines */}
           {[0, 0.25, 0.5, 0.75, 1].map((ratio) => {
@@ -854,20 +883,22 @@ function MonthlyChart({ data }) {
                   strokeDasharray="4 4"
                 />
                 <text
-                  x={padding.left - 10}
+                  x={padding.left - 8}
                   y={y + 4}
                   textAnchor="end"
                   fill="#9ca3af"
-                  className="text-[10px] md:text-[11px] font-bold"
+                  fontSize={isMobile ? "10" : "12"}
+                  fontWeight="bold"
                 >
-                  {formatNumber(maxLiters * ratio)}
+                  {formatInteger(maxLiters * ratio)}
                 </text>
                 <text
-                  x={viewBoxWidth - padding.right + 10}
+                  x={viewBoxWidth - padding.right + 8}
                   y={y + 4}
                   textAnchor="start"
                   fill="#9ca3af"
-                  className="text-[10px] md:text-[11px] font-bold"
+                  fontSize={isMobile ? "10" : "12"}
+                  fontWeight="bold"
                 >
                   {formatNumber(maxCons * ratio)}
                 </text>
@@ -877,20 +908,22 @@ function MonthlyChart({ data }) {
 
           {/* Axis Labels */}
           <text
-            x={padding.left - 10}
+            x={padding.left - 8}
             y={padding.top - 15}
             textAnchor="end"
             fill="#ea580c"
-            className="text-[9px] md:text-[10px] font-black"
+            fontSize={isMobile ? "10" : "12"}
+            fontWeight="900"
           >
             ລິດ (L)
           </text>
           <text
-            x={viewBoxWidth - padding.right + 10}
+            x={viewBoxWidth - padding.right + 8}
             y={padding.top - 15}
             textAnchor="start"
             fill="#2563eb"
-            className="text-[9px] md:text-[10px] font-black"
+            fontSize={isMobile ? "10" : "12"}
+            fontWeight="900"
           >
             ກມ/ລິດ
           </text>
@@ -911,10 +944,11 @@ function MonthlyChart({ data }) {
                 />
                 <text
                   x={p.x}
-                  y={viewBoxHeight - padding.bottom + 25}
+                  y={viewBoxHeight - padding.bottom + 20}
                   textAnchor="middle"
                   fill="#4b5563"
-                  className="text-[10px] md:text-xs font-bold"
+                  fontSize={isMobile ? "10" : "12"}
+                  fontWeight="bold"
                 >
                   {p.label}
                 </text>
@@ -925,20 +959,22 @@ function MonthlyChart({ data }) {
                       y={p.litY}
                       textAnchor="middle"
                       stroke="white"
-                      strokeWidth="4"
+                      strokeWidth="3"
                       strokeLinejoin="round"
-                      className="text-[10px] md:text-[11px] font-black"
+                      fontSize={isMobile ? "11" : "12"}
+                      fontWeight="900"
                     >
-                      {formatNumber(p.liters)}
+                      {formatInteger(p.liters)}
                     </text>
                     <text
                       x={p.x}
                       y={p.litY}
                       textAnchor="middle"
                       fill="#ea580c"
-                      className="text-[10px] md:text-[11px] font-black"
+                      fontSize={isMobile ? "11" : "12"}
+                      fontWeight="900"
                     >
-                      {formatNumber(p.liters)}
+                      {formatInteger(p.liters)}
                     </text>
                   </>
                 )}
@@ -951,7 +987,7 @@ function MonthlyChart({ data }) {
             points={polylinePoints}
             fill="none"
             stroke="#3b82f6"
-            strokeWidth="3"
+            strokeWidth={isMobile ? "2" : "3"}
           />
 
           {/* Points (Consumption) */}
@@ -960,11 +996,11 @@ function MonthlyChart({ data }) {
               <circle
                 cx={p.x}
                 cy={p.yLine}
-                r="5"
+                r={isMobile ? "4" : "5"}
                 fill="#ffffff"
                 stroke="#3b82f6"
                 strokeWidth="2"
-                className="md:r-6 cursor-pointer hover:r-[7px] md:hover:r-[8px] transition-all"
+                className="cursor-pointer transition-all"
               />
               {p.consumption > 0 && (
                 <>
@@ -973,9 +1009,10 @@ function MonthlyChart({ data }) {
                     y={p.consY}
                     textAnchor="middle"
                     stroke="white"
-                    strokeWidth="4"
+                    strokeWidth="3"
                     strokeLinejoin="round"
-                    className="text-[10px] md:text-[11px] font-black"
+                    fontSize={isMobile ? "11" : "12"}
+                    fontWeight="900"
                   >
                     {formatNumber(p.consumption)}
                   </text>
@@ -984,7 +1021,8 @@ function MonthlyChart({ data }) {
                     y={p.consY}
                     textAnchor="middle"
                     fill="#2563eb"
-                    className="text-[10px] md:text-[11px] font-black"
+                    fontSize={isMobile ? "11" : "12"}
+                    fontWeight="900"
                   >
                     {formatNumber(p.consumption)}
                   </text>
@@ -995,7 +1033,7 @@ function MonthlyChart({ data }) {
         </svg>
 
         {/* Legend */}
-        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 md:mt-6 text-[10px] md:text-sm text-gray-600 font-bold font-lao">
+        <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 md:mt-6 text-xs md:text-sm text-gray-600 font-bold font-lao">
           <div className="flex items-center space-x-1.5 md:space-x-2">
             <div className="w-3 h-3 md:w-4 md:h-4 bg-orange-200 rounded"></div>
             <span>ປະລິມານນ້ຳມັນ (ລິດ)</span>
@@ -1062,6 +1100,7 @@ function Dashboard({ logs, cars }) {
 
   return (
     <div className="space-y-4 md:space-y-6 animate-in slide-in-from-bottom-4 duration-300">
+      {/* ປ່ຽນການຈັດລຽງ: ຈຳນວນລົດ -> ຈຳນວນຄັ້ງ -> ນ້ຳມັນລວມ -> ຄ່າໃຊ້ຈ່າຍ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-6">
         <div className="bg-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-3 md:space-x-4 hover:shadow-md transition overflow-hidden">
           <div className="bg-purple-100 p-2.5 md:p-4 rounded-full text-purple-500 shrink-0">
@@ -1076,6 +1115,22 @@ function Dashboard({ logs, cars }) {
               title={totalCars}
             >
               {formatInteger(totalCars)}
+            </p>
+          </div>
+        </div>
+        <div className="bg-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-3 md:space-x-4 hover:shadow-md transition overflow-hidden">
+          <div className="bg-blue-100 p-2.5 md:p-4 rounded-full text-blue-500 shrink-0">
+            <List className="w-5 h-5 md:w-8 md:h-8" />
+          </div>
+          <div className="min-w-0 flex-1">
+            <p className="text-gray-500 text-[10px] md:text-sm font-bold truncate">
+              ຈຳນວນຄັ້ງທີ່ເຕີມ
+            </p>
+            <p
+              className="text-lg md:text-2xl lg:text-3xl font-black text-gray-800 truncate"
+              title={logs.length}
+            >
+              {formatInteger(logs.length)}
             </p>
           </div>
         </div>
@@ -1111,22 +1166,6 @@ function Dashboard({ logs, cars }) {
             </p>
           </div>
         </div>
-        <div className="bg-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-3 md:space-x-4 hover:shadow-md transition overflow-hidden">
-          <div className="bg-blue-100 p-2.5 md:p-4 rounded-full text-blue-500 shrink-0">
-            <List className="w-5 h-5 md:w-8 md:h-8" />
-          </div>
-          <div className="min-w-0 flex-1">
-            <p className="text-gray-500 text-[10px] md:text-sm font-bold truncate">
-              ຈຳນວນຄັ້ງທີ່ເຕີມ
-            </p>
-            <p
-              className="text-lg md:text-2xl lg:text-3xl font-black text-gray-800 truncate"
-              title={logs.length}
-            >
-              {formatInteger(logs.length)}
-            </p>
-          </div>
-        </div>
       </div>
 
       <div className="bg-white p-4 md:p-8 rounded-xl md:rounded-2xl shadow-sm border border-gray-100">
@@ -1140,7 +1179,7 @@ function Dashboard({ logs, cars }) {
   );
 }
 
-function LogList({ logs, onEdit, onDelete, setView, role, cars }) {
+function LogList({ logs, onEdit, onDelete, setView, role, cars, onRefresh }) {
   const [filterDate, setFilterDate] = useState("");
   const [filterPlate, setFilterPlate] = useState("");
 
@@ -1199,8 +1238,16 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars }) {
   return (
     <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
       <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-        <h3 className="text-base md:text-lg font-bold text-gray-800 font-lao">
-          ປະຫວັດການໃສ່ນ້ຳມັນ
+        <h3 className="text-base md:text-lg font-bold text-gray-800 font-lao flex items-center space-x-2">
+          <span>ປະຫວັດການໃສ່ນ້ຳມັນ</span>
+          {/* ປຸ່ມ Refresh (ດຶງຂໍ້ມູນໃໝ່) */}
+          <button
+            onClick={onRefresh}
+            className="p-1.5 md:p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition"
+            title="ໂຫຼດຂໍ້ມູນໃໝ່"
+          >
+            <RefreshCw className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
         </h3>
         <button
           onClick={() => setView("form")}
@@ -2087,7 +2134,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
   );
 }
 
-function FuelReport({ logs, cars }) {
+function FuelReport({ logs, cars, onRefresh }) {
   const [startDate, setStartDate] = useState("");
   const [endDate, setEndDate] = useState("");
   const [selectedPlate, setSelectedPlate] = useState("");
@@ -2208,10 +2255,20 @@ function FuelReport({ logs, cars }) {
     <div className="space-y-4 md:space-y-6 animate-in slide-in-from-bottom-4 duration-300 mb-4">
       <div className="bg-white p-4 md:p-8 rounded-xl md:rounded-2xl shadow-sm border border-gray-100">
         <h3 className="text-base md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center space-x-2 md:space-x-3 border-b pb-3 md:pb-4">
-          <div className="bg-orange-100 p-1.5 md:p-2 rounded-lg">
-            <BarChart3 className="text-orange-500 w-4 h-4 md:w-6 h-6" />
+          <div className="flex items-center space-x-2">
+            <div className="bg-orange-100 p-1.5 md:p-2 rounded-lg">
+              <BarChart3 className="text-orange-500 w-4 h-4 md:w-6 h-6" />
+            </div>
+            <span>ລາຍງານການເຕີມນ້ຳມັນ</span>
           </div>
-          <span>ລາຍງານການເຕີມນ້ຳມັນ</span>
+          {/* ປຸ່ມ Refresh (ດຶງຂໍ້ມູນໃໝ່) */}
+          <button
+            onClick={onRefresh}
+            className="p-1.5 md:p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition ml-auto"
+            title="ໂຫຼດຂໍ້ມູນໃໝ່"
+          >
+            <RefreshCw className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
