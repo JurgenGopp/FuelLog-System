@@ -29,10 +29,10 @@ import {
   RefreshCw,
 } from "lucide-react";
 
-import LOGO_URL from "./assets/Logo_P&P.jpg";
 // ເຊື່ອມຕໍ່ກັບ GAS API URL ຂອງທ່ານ
 const API_URL =
   "https://script.google.com/macros/s/AKfycbxUEqs7nHH2Mz6zp3CzwDNVwLqXwA1S8w4SGobcflKJ56-EaYNm3RXvK8nAiCGENg/exec";
+const LOGO_URL = "src/assets/Logo_P&P.jpg";
 
 // --- ກຳນົດສິດການເຂົ້າເຖິງເມນູຂອງແຕ່ລະ Role ---
 const roleMenuAccess = {
@@ -535,7 +535,7 @@ export default function FuelApp() {
                 <img
                   src={LOGO_URL}
                   alt="Logo"
-                  className="h-16 md:h-20 object-contain"
+                  className="h-16 md:h-20 object-contain rounded-lg"
                 />
               </div>
               <h2 className="text-xl md:text-2xl font-bold text-center text-gray-800 mb-6 md:mb-8 font-lao">
@@ -583,12 +583,12 @@ export default function FuelApp() {
           >
             <div className="h-full flex flex-col font-lao">
               <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 bg-orange-500 text-white flex-shrink-0">
-                <div className="flex items-center space-x-2 font-bold text-base md:text-lg">
-                  <Droplet className="w-5 h-5 md:w-6 md:h-6" />
+                <div className="flex items-center space-x-2 font-bold text-base md:text-lg min-w-0 pr-2">
+                  <Droplet className="w-5 h-5 md:w-6 md:h-6 shrink-0" />
                   <span className="truncate">ລະບົບບັນທຶກການຕື່ມນ້ຳມັນ</span>
                 </div>
                 <button
-                  className="md:hidden"
+                  className="md:hidden shrink-0"
                   onClick={() => setSidebarOpen(false)}
                 >
                   <X className="w-6 h-6" />
@@ -783,7 +783,7 @@ function Footer() {
           <img
             src={LOGO_URL}
             alt="Logo"
-            className="h-5 md:h-6 object-contain"
+            className="h-5 md:h-6 object-contain rounded"
           />
           <span className="font-bold text-gray-700">
             P AND P Trading Export-Import Co., Ltd
@@ -1263,21 +1263,21 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars, onRefresh }) {
       </div>
 
       <div className="p-4 md:p-5 border-b border-gray-100 bg-white grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5">
-        <div className="flex flex-col z-20 relative">
+        <div className="flex flex-col z-20 relative min-w-0 w-full">
           <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
             ຄົ້ນຫາຕາມວັນທີ:
           </label>
-          <div className="relative">
+          <div className="relative w-full min-w-0">
             <input
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="w-full pl-8 md:pl-10 pr-3 md:pr-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-xs md:text-sm font-medium bg-gray-50 focus:bg-white"
+              className="w-full min-w-0 pl-8 md:pl-10 pr-3 md:pr-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-xs md:text-sm font-medium bg-gray-50 focus:bg-white box-border"
             />
-            <Filter className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-3 md:left-3.5 top-3" />
+            <Filter className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-3 md:left-3.5 top-2.5 md:top-3" />
           </div>
         </div>
-        <div className="flex flex-col z-20 relative">
+        <div className="flex flex-col z-20 relative min-w-0 w-full">
           <SearchableSelect
             label="ຄົ້ນຫາຕາມທະບຽນລົດ:"
             placeholder="-- ທັງໝົດ --"
@@ -1524,8 +1524,8 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
         className="space-y-6 md:space-y-8"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
-          <div className="space-y-4 md:space-y-5">
-            <div>
+          <div className="space-y-4 md:space-y-5 min-w-0">
+            <div className="relative min-w-0 w-full">
               <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                 ວັນທີ
               </label>
@@ -1535,11 +1535,11 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                 required
                 value={formData.date}
                 onChange={handleChange}
-                className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base"
+                className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border max-w-full"
               />
             </div>
 
-            <div className="z-20 relative">
+            <div className="z-20 relative min-w-0 w-full">
               <SearchableSelect
                 label="ທະບຽນລົດ (ສະເພາະລົດທີ່ໄດ້ຮັບສິດ)"
                 placeholder="-- ເລືອກ ຫຼື ພິມຄົ້ນຫາທະບຽນລົດ --"
@@ -1553,7 +1553,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
             </div>
 
             <div className="grid grid-cols-2 gap-3 md:gap-5 z-10 relative">
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                   ຈຳນວນ (ລິດ)
                 </label>
@@ -1564,10 +1564,10 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                   required
                   value={formData.liters}
                   onChange={handleChange}
-                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base"
+                  className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                   ລາຄາ/ລິດ (ກີບ)
                 </label>
@@ -1577,12 +1577,12 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                   required
                   value={formData.pricePerLiter}
                   onChange={handleChange}
-                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base"
+                  className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
                 />
               </div>
             </div>
 
-            <div className="bg-orange-50 p-4 md:p-6 rounded-xl md:rounded-2xl space-y-3 md:space-y-4 border border-orange-100 shadow-inner z-0 relative">
+            <div className="bg-orange-50 p-4 md:p-6 rounded-xl md:rounded-2xl space-y-3 md:space-y-4 border border-orange-100 shadow-inner z-0 relative min-w-0">
               <div className="flex justify-between items-center text-xs md:text-sm">
                 <span className="text-gray-600 font-medium">
                   ລາຄາລວມ (Auto):
@@ -1591,7 +1591,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                   {formatInteger(formData.totalPrice)} ກີບ
                 </span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs md:text-sm font-black text-gray-800 mb-1.5 md:mb-2">
                   ລາຄາຈ່າຍຈິງ (ກີບ)
                 </label>
@@ -1601,7 +1601,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                   required
                   value={formData.actualPaid}
                   onChange={handleChange}
-                  className="w-full px-3 md:px-4 py-2.5 md:py-3 border-2 border-orange-300 rounded-lg md:rounded-xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition font-bold text-lg md:text-xl text-orange-600"
+                  className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border-2 border-orange-300 rounded-lg md:rounded-xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition font-bold text-lg md:text-xl text-orange-600 box-border"
                 />
               </div>
               <div className="flex justify-between items-center text-xs md:text-sm pt-2.5 md:pt-3 border-t border-orange-200">
@@ -1618,8 +1618,8 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
             </div>
           </div>
 
-          <div className="space-y-4 md:space-y-5">
-            <div>
+          <div className="space-y-4 md:space-y-5 min-w-0">
+            <div className="min-w-0">
               <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                 ເລກຫຼັກລົດ (ກມ.)
               </label>
@@ -1629,11 +1629,11 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                 required
                 value={formData.odometer}
                 onChange={handleChange}
-                className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base"
+                className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
               />
             </div>
 
-            <div className="bg-blue-50 p-4 md:p-6 rounded-xl md:rounded-2xl space-y-2 md:space-y-3 border border-blue-100 text-xs md:text-sm shadow-inner">
+            <div className="bg-blue-50 p-4 md:p-6 rounded-xl md:rounded-2xl space-y-2 md:space-y-3 border border-blue-100 text-xs md:text-sm shadow-inner min-w-0">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-medium">
                   ໄລຍະທາງຫຼັງເຕີມລ່າສຸດ:
@@ -1666,6 +1666,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                       className="w-full h-full object-cover"
                       alt="Preview"
                     />
+                    {/* ແຖບປ່ຽນຮູບເວລາເອົາເມົາສ໌ໄປຊີ້ (Hover) */}
                     <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <span className="text-white font-bold px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm bg-black bg-opacity-60 rounded-lg md:rounded-xl backdrop-blur-sm flex items-center space-x-1.5 md:space-x-2">
                         <Edit className="w-3 h-3 md:w-4 h-4" />{" "}
@@ -1784,10 +1785,10 @@ function SearchableSelect({
   };
 
   return (
-    <div className="relative w-full" ref={containerRef}>
+    <div className="relative w-full min-w-0" ref={containerRef}>
       {label && <label className={labelClassName}>{label}</label>}
       <div
-        className="w-full px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg md:rounded-xl bg-gray-50 hover:bg-white flex justify-between items-center cursor-pointer focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition text-sm md:text-base min-h-[40px] md:min-h-[48px]"
+        className="w-full min-w-0 px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg md:rounded-xl bg-gray-50 hover:bg-white flex justify-between items-center cursor-pointer focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition text-sm md:text-base min-h-[40px] md:min-h-[48px] box-border"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span
@@ -1904,7 +1905,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
           onSubmit={handleSubmit}
           className="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-3 md:gap-5 items-end"
         >
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             <label className="text-xs md:text-sm font-bold text-gray-700">
               ຊື່ແທ້
             </label>
@@ -1915,11 +1916,11 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base"
+              className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
               required
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             <label className="text-xs md:text-sm font-bold text-gray-700">
               ຊື່ເຂົ້າລະບົບ
             </label>
@@ -1930,11 +1931,11 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               onChange={(e) =>
                 setFormData({ ...formData, username: e.target.value })
               }
-              className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base"
+              className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
               required
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             <label className="text-xs md:text-sm font-bold text-gray-700">
               ລະຫັດຜ່ານ
             </label>
@@ -1945,11 +1946,11 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
-              className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base"
+              className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
               required
             />
           </div>
-          <div className="space-y-1">
+          <div className="space-y-1 min-w-0">
             <label className="text-xs md:text-sm font-bold text-gray-700">
               ສິດທິ
             </label>
@@ -1958,7 +1959,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               onChange={(e) =>
                 setFormData({ ...formData, role: e.target.value })
               }
-              className="w-full px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none bg-gray-50 focus:bg-white focus:ring-2 focus:ring-orange-500 transition font-bold text-sm md:text-base"
+              className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none bg-gray-50 focus:bg-white focus:ring-2 focus:ring-orange-500 transition font-bold text-sm md:text-base box-border"
             >
               <option value="user">User</option>
               <option value="driver">Driver</option>
@@ -1973,7 +1974,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
             </label>
             {formData.role === "admin" ? (
               <div className="flex items-center space-x-2 text-xs md:text-sm text-orange-600 bg-orange-100/50 p-2.5 md:p-3 rounded-lg">
-                <AlertCircle className="w-4 h-4" />
+                <AlertCircle className="w-4 h-4 shrink-0" />
                 <span className="font-bold">
                   Admin ສາມາດເຫັນຂໍ້ມູນລົດທັງໝົດໄດ້ອັດຕະໂນມັດ
                 </span>
@@ -2260,16 +2261,16 @@ function FuelReport({ logs, cars, onRefresh }) {
     <div className="space-y-4 md:space-y-6 animate-in slide-in-from-bottom-4 duration-300 mb-4">
       <div className="bg-white p-4 md:p-8 rounded-xl md:rounded-2xl shadow-sm border border-gray-100">
         <h3 className="text-base md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center space-x-2 md:space-x-3 border-b pb-3 md:pb-4">
-          <div className="flex items-center space-x-2">
-            <div className="bg-orange-100 p-1.5 md:p-2 rounded-lg">
+          <div className="flex items-center space-x-2 min-w-0 pr-2">
+            <div className="bg-orange-100 p-1.5 md:p-2 rounded-lg shrink-0">
               <BarChart3 className="text-orange-500 w-4 h-4 md:w-6 h-6" />
             </div>
-            <span>ລາຍງານການເຕີມນ້ຳມັນ</span>
+            <span className="truncate">ລາຍງານການເຕີມນ້ຳມັນ</span>
           </div>
           {/* ປຸ່ມ Refresh (ດຶງຂໍ້ມູນໃໝ່) */}
           <button
             onClick={onRefresh}
-            className="p-1.5 md:p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition ml-auto"
+            className="p-1.5 md:p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition ml-auto shrink-0"
             title="ໂຫຼດຂໍ້ມູນໃໝ່"
           >
             <RefreshCw className="w-4 h-4 md:w-5 md:h-5" />
@@ -2277,29 +2278,33 @@ function FuelReport({ logs, cars, onRefresh }) {
         </h3>
 
         <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
-          <div className="flex flex-col z-20 relative">
+          <div className="flex flex-col z-20 relative min-w-0 w-full">
             <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
               ຕັ້ງແຕ່ວັນທີ:
             </label>
-            <input
-              type="date"
-              value={startDate}
-              onChange={(e) => setStartDate(e.target.value)}
-              className="px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition"
-            />
+            <div className="relative w-full min-w-0">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="w-full min-w-0 px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border"
+              />
+            </div>
           </div>
-          <div className="flex flex-col z-20 relative">
+          <div className="flex flex-col z-20 relative min-w-0 w-full">
             <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
               ເຖິງວັນທີ:
             </label>
-            <input
-              type="date"
-              value={endDate}
-              onChange={(e) => setEndDate(e.target.value)}
-              className="px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition"
-            />
+            <div className="relative w-full min-w-0">
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="w-full min-w-0 px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border"
+              />
+            </div>
           </div>
-          <div className="flex flex-col z-20 relative">
+          <div className="flex flex-col z-20 relative min-w-0 w-full">
             <SearchableSelect
               label="ທະບຽນລົດ:"
               placeholder="-- ທັງໝົດ --"
