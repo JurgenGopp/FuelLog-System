@@ -35,6 +35,10 @@ import LOGO_URL from "./assets/Logo_P&P.jpg";
 const API_URL =
   "https://script.google.com/macros/s/AKfycbxUEqs7nHH2Mz6zp3CzwDNVwLqXwA1S8w4SGobcflKJ56-EaYNm3RXvK8nAiCGENg/exec";
 
+// ໝາຍເຫດ: ສຳລັບໂປຣເຈັກຕົວຈິງຂອງທ່ານ ໃຫ້ໃຊ້ເປັນ `import LOGO_URL from './assets/Logo_P&P.jpg';`
+// ແຕ່ໃນລະບົບ Canvas ນີ້ບໍ່ມີໄຟລ໌ຮູບດັ່ງກ່າວ ຈຶ່ງເຮັດໃຫ້ເກີດ Error. ຂ້າພະເຈົ້າຈຶ່ງຂໍອະນຸຍາດໃຊ້ເປັນ Link ຮູບພາບເພື່ອໃຫ້ລະບົບສະແດງຜົນໄດ້ครับ.
+// const LOGO_URL = 'https://drive.google.com/uc?export=view&id=192yEGEA_z0E4dGbqHd3ae6kyTRriLmzm';
+
 // --- ກຳນົດສິດການເຂົ້າເຖິງເມນູຂອງແຕ່ລະ Role ---
 const roleMenuAccess = {
   admin: ["dashboard", "form", "list", "report", "users"],
@@ -551,7 +555,7 @@ export default function FuelApp() {
                     name="username"
                     type="text"
                     required
-                    className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition text-sm md:text-base"
+                    className="w-full h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition text-sm md:text-base box-border"
                   />
                 </div>
                 <div>
@@ -562,13 +566,13 @@ export default function FuelApp() {
                     name="password"
                     type="password"
                     required
-                    className="w-full px-3 md:px-4 py-2 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition text-sm md:text-base"
+                    className="w-full h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 outline-none transition text-sm md:text-base box-border"
                   />
                 </div>
                 <button
                   type="submit"
                   disabled={isLoading}
-                  className="w-full bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-bold py-2.5 md:py-3 rounded-lg transition shadow-md text-sm md:text-base mt-2"
+                  className="w-full h-[40px] md:h-[48px] bg-orange-500 hover:bg-orange-600 disabled:bg-orange-300 text-white font-bold rounded-lg md:rounded-xl transition shadow-md text-sm md:text-base mt-2"
                 >
                   ເຂົ້າສູ່ລະບົບ
                 </button>
@@ -586,7 +590,6 @@ export default function FuelApp() {
               {/* ປັບໂຄງສ້າງ Header ຂອງ Sidebar ໃຫ້ມີການຈັດລຽງທີ່ພໍດີ ແລະ ບໍ່ທັບປຸ່ມ X */}
               <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 bg-orange-500 text-white flex-shrink-0 w-full">
                 <div className="flex items-center space-x-2 font-bold min-w-0 flex-1 pr-2">
-                  <Droplet className="w-5 h-5 md:w-6 md:h-6 shrink-0" />
                   <span className="text-sm md:text-lg truncate">
                     ລະບົບບັນທຶກການຕື່ມນ້ຳມັນ
                   </span>
@@ -685,7 +688,7 @@ export default function FuelApp() {
                 </div>
                 <button
                   onClick={handleLogout}
-                  className="w-full flex items-center justify-center space-x-2 px-3 md:px-4 py-2.5 md:py-3 text-red-600 bg-red-50 hover:bg-red-100 font-bold rounded-xl transition shadow-sm text-sm md:text-base"
+                  className="w-full flex items-center justify-center space-x-2 px-3 md:px-4 py-2.5 md:py-3 text-red-600 bg-red-50 hover:bg-red-100 font-bold rounded-xl transition shadow-sm text-sm md:text-base h-[40px] md:h-[48px]"
                 >
                   <LogOut className="w-4 h-4 md:w-5 md:h-5" />{" "}
                   <span>ອອກຈາກລະບົບ</span>
@@ -1278,14 +1281,14 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars, onRefresh }) {
             ຄົ້ນຫາຕາມວັນທີ:
           </label>
           <div className="relative w-full min-w-0">
-            {/* ປັບ Padding ໃຫ້ພໍດີກັບ Mobile ບໍ່ໃຫ້ຕົວໜັງສືລົ້ນ */}
+            {/* ປັບ Padding ແລະ ຄວາມສູງໃຫ້ພໍດີກັບ Mobile ເທົ່າກັນທຸກຊ່ອງ */}
             <input
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="w-full min-w-0 pl-7 md:pl-10 pr-2 md:pr-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-xs md:text-sm font-medium bg-gray-50 focus:bg-white box-border"
+              className="w-full min-w-0 h-[40px] md:h-[48px] pl-8 md:pl-10 pr-3 md:pr-4 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-xs md:text-sm font-medium bg-gray-50 focus:bg-white box-border"
             />
-            <Filter className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-2.5 md:left-3.5 top-2.5 md:top-3 pointer-events-none" />
+            <Filter className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-3 md:left-3.5 top-3 md:top-3.5 pointer-events-none" />
           </div>
         </div>
         <div className="flex flex-col z-20 relative min-w-0 w-full">
@@ -1306,7 +1309,7 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars, onRefresh }) {
               setFilterPlate("");
               setSortConfig({ key: "date", direction: "desc" });
             }}
-            className="px-4 md:px-5 py-2 md:py-2.5 text-xs md:text-sm text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg md:rounded-xl font-bold transition w-full md:w-auto"
+            className="px-4 md:px-5 h-[40px] md:h-[48px] text-xs md:text-sm text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg md:rounded-xl font-bold transition w-full md:w-auto"
           >
             ລ້າງການຄົ້ນຫາ/ຈັດລຽງ
           </button>
@@ -1540,14 +1543,14 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
               <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                 ວັນທີ
               </label>
-              {/* ປັບ Padding ໃຫ້ພໍດີກັບ Mobile */}
+              {/* ປັບ Padding ແລະ ຄວາມສູງໃຫ້ພໍດີກັບ Mobile */}
               <input
                 type="date"
                 name="date"
                 required
                 value={formData.date}
                 onChange={handleChange}
-                className="w-full min-w-0 px-2 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-xs md:text-base box-border"
+                className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-xs md:text-base box-border"
               />
             </div>
 
@@ -1576,7 +1579,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                   required
                   value={formData.liters}
                   onChange={handleChange}
-                  className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
+                  className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
                 />
               </div>
               <div className="min-w-0">
@@ -1589,7 +1592,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                   required
                   value={formData.pricePerLiter}
                   onChange={handleChange}
-                  className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
+                  className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
                 />
               </div>
             </div>
@@ -1607,13 +1610,14 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                 <label className="block text-xs md:text-sm font-black text-gray-800 mb-1.5 md:mb-2">
                   ລາຄາຈ່າຍຈິງ (ກີບ)
                 </label>
+                {/* ຊ່ອງລາຄາຈ່າຍຈິງເຮັດໃຫ້ສູງກວ່າໝູ່ໜ້ອຍໜຶ່ງເພື່ອຄວາມເດັ່ນຊັດ */}
                 <input
                   type="number"
                   name="actualPaid"
                   required
                   value={formData.actualPaid}
                   onChange={handleChange}
-                  className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border-2 border-orange-300 rounded-lg md:rounded-xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition font-bold text-lg md:text-xl text-orange-600 box-border"
+                  className="w-full min-w-0 h-[48px] md:h-[56px] px-3 md:px-4 border-2 border-orange-300 rounded-lg md:rounded-xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition font-bold text-lg md:text-xl text-orange-600 box-border"
                 />
               </div>
               <div className="flex justify-between items-center text-xs md:text-sm pt-2.5 md:pt-3 border-t border-orange-200">
@@ -1641,7 +1645,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                 required
                 value={formData.odometer}
                 onChange={handleChange}
-                className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
+                className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
               />
             </div>
 
@@ -1800,7 +1804,7 @@ function SearchableSelect({
     <div className="relative w-full min-w-0" ref={containerRef}>
       {label && <label className={labelClassName}>{label}</label>}
       <div
-        className="w-full min-w-0 px-3 md:px-4 py-2 md:py-3 border border-gray-300 rounded-lg md:rounded-xl bg-gray-50 hover:bg-white flex justify-between items-center cursor-pointer focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition text-sm md:text-base min-h-[40px] md:min-h-[48px] box-border"
+        className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl bg-gray-50 hover:bg-white flex justify-between items-center cursor-pointer focus-within:ring-2 focus-within:ring-orange-500 focus-within:border-orange-500 transition text-sm md:text-base box-border"
         onClick={() => setIsOpen(!isOpen)}
       >
         <span
@@ -1928,7 +1932,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
+              className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
               required
             />
           </div>
@@ -1943,7 +1947,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               onChange={(e) =>
                 setFormData({ ...formData, username: e.target.value })
               }
-              className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
+              className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
               required
             />
           </div>
@@ -1958,7 +1962,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
-              className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
+              className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
               required
             />
           </div>
@@ -1971,7 +1975,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               onChange={(e) =>
                 setFormData({ ...formData, role: e.target.value })
               }
-              className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none bg-gray-50 focus:bg-white focus:ring-2 focus:ring-orange-500 transition font-bold text-sm md:text-base box-border"
+              className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl outline-none bg-gray-50 focus:bg-white focus:ring-2 focus:ring-orange-500 transition font-bold text-sm md:text-base box-border"
             >
               <option value="user">User</option>
               <option value="driver">Driver</option>
@@ -2034,14 +2038,14 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
                     assignedCars: [],
                   });
                 }}
-                className="px-5 md:px-6 py-2.5 md:py-3 bg-gray-200 text-gray-700 rounded-lg md:rounded-xl font-bold hover:bg-gray-300 transition text-sm md:text-base"
+                className="px-5 md:px-6 h-[40px] md:h-[48px] bg-gray-200 text-gray-700 rounded-lg md:rounded-xl font-bold hover:bg-gray-300 transition text-sm md:text-base"
               >
                 ຍົກເລີກ
               </button>
             )}
             <button
               type="submit"
-              className="px-6 md:px-8 py-2.5 md:py-3 bg-orange-500 text-white rounded-lg md:rounded-xl hover:bg-orange-600 transition font-bold shadow-md text-sm md:text-base"
+              className="px-6 md:px-8 h-[40px] md:h-[48px] bg-orange-500 text-white rounded-lg md:rounded-xl hover:bg-orange-600 transition font-bold shadow-md text-sm md:text-base"
             >
               {isEditing ? "ປັບປຸງຂໍ້ມູນ" : "ເພີ່ມຜູ້ໃຊ້"}
             </button>
@@ -2299,7 +2303,7 @@ function FuelReport({ logs, cars, onRefresh }) {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full min-w-0 px-2 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border"
+                className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border"
               />
             </div>
           </div>
@@ -2312,7 +2316,7 @@ function FuelReport({ logs, cars, onRefresh }) {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full min-w-0 px-2 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border"
+                className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border"
               />
             </div>
           </div>
@@ -2336,7 +2340,7 @@ function FuelReport({ logs, cars, onRefresh }) {
                 setSortConfig({ key: "date", direction: "desc" });
                 setExpandedGroup(null);
               }}
-              className="px-4 md:px-5 py-2 md:py-2.5 w-full text-xs md:text-sm text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg md:rounded-xl font-bold transition"
+              className="px-4 md:px-5 h-[40px] md:h-[48px] w-full text-xs md:text-sm text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg md:rounded-xl font-bold transition"
             >
               ລ້າງການຄົ້ນຫາ/ຈັດລຽງ
             </button>
