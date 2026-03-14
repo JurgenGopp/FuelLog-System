@@ -29,10 +29,11 @@ import {
   RefreshCw,
 } from "lucide-react";
 
+import LOGO_URL from "./assets/Logo_P&P.jpg";
+
 // ເຊື່ອມຕໍ່ກັບ GAS API URL ຂອງທ່ານ
 const API_URL =
   "https://script.google.com/macros/s/AKfycbxUEqs7nHH2Mz6zp3CzwDNVwLqXwA1S8w4SGobcflKJ56-EaYNm3RXvK8nAiCGENg/exec";
-const LOGO_URL = "src/assets/Logo_P&P.jpg";
 
 // --- ກຳນົດສິດການເຂົ້າເຖິງເມນູຂອງແຕ່ລະ Role ---
 const roleMenuAccess = {
@@ -95,25 +96,21 @@ const generateImageFilename = (type, plate, dateStr, allLogs, currentId) => {
   return `${type}_${plate}_${prefixDate}${String(seq).padStart(2, "0")}`;
 };
 
-// --- Helper Function: ແປງວັນທີເປັນ YYYY-MM-DD ຕາມ Timezone ທ້ອງຖິ່ນ (ແກ້ບັນຫາວັນທີຊ້າໄປ 1 ມື້) ---
+// --- Helper Function: ແປງວັນທີເປັນ YYYY-MM-DD ຕາມ Timezone ທ້ອງຖິ່ນ ---
 const getLocalYYYYMMDD = (dateInput) => {
   if (!dateInput) return "";
-
-  // ສ້າງ Date object ເພື່ອໃຫ້ Browser ຄຳນວນ Timezone ອັດຕະໂນມັດ
-  let d = new Date(dateInput);
-
-  if (!isNaN(d.getTime())) {
-    const yyyy = d.getFullYear();
-    const mm = String(d.getMonth() + 1).padStart(2, "0");
-    const dd = String(d.getDate()).padStart(2, "0");
-    return `${yyyy}-${mm}-${dd}`;
+  let dStr = dateInput;
+  if (typeof dStr === "string" && dStr.includes("T")) {
+    dStr = dStr.split("T")[0];
   }
-
-  // Fallback ຖ້າຫາກແປງບໍ່ໄດ້
-  if (typeof dateInput === "string") {
-    return dateInput.split("T")[0];
+  let d = new Date(dStr);
+  if (isNaN(d.getTime())) {
+    return typeof dStr === "string" ? dStr : "";
   }
-  return "";
+  const yyyy = d.getFullYear();
+  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const dd = String(d.getDate()).padStart(2, "0");
+  return `${yyyy}-${mm}-${dd}`;
 };
 
 // --- Helper Function: ແປງຮູບແບບວັນທີເປັນ DD/MM/YYYY ---
@@ -536,6 +533,10 @@ export default function FuelApp() {
                   src={LOGO_URL}
                   alt="Logo"
                   className="h-16 md:h-20 object-contain rounded-lg"
+                  onError={(e) => {
+                    e.target.onerror = null;
+                    e.target.alt = "P&P Logo";
+                  }}
                 />
               </div>
               <h2 className="text-xl md:text-2xl font-bold text-center text-gray-800 mb-6 md:mb-8 font-lao">
@@ -579,19 +580,22 @@ export default function FuelApp() {
       ) : (
         <>
           <div
-            className={`fixed inset-y-0 left-0 z-50 w-64 bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static md:inset-0 flex flex-col`}
+            className={`fixed inset-y-0 left-0 z-50 w-[300px] bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static md:inset-0 flex flex-col`}
           >
             <div className="h-full flex flex-col font-lao">
-              <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 bg-orange-500 text-white flex-shrink-0">
-                <div className="flex items-center space-x-2 font-bold text-base md:text-lg min-w-0 pr-2">
+              {/* ປັບໂຄງສ້າງ Header ຂອງ Sidebar ໃຫ້ມີການຈັດລຽງທີ່ພໍດີ ແລະ ບໍ່ທັບປຸ່ມ X */}
+              <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 bg-orange-500 text-white flex-shrink-0 w-full">
+                <div className="flex items-center space-x-2 font-bold min-w-0 flex-1 pr-2">
                   <Droplet className="w-5 h-5 md:w-6 md:h-6 shrink-0" />
-                  <span className="truncate">ລະບົບບັນທຶກການຕື່ມນ້ຳມັນ</span>
+                  <span className="text-sm md:text-lg truncate">
+                    ລະບົບບັນທຶກການຕື່ມນ້ຳມັນ
+                  </span>
                 </div>
                 <button
-                  className="md:hidden shrink-0"
+                  className="md:hidden shrink-0 p-1 bg-orange-600 hover:bg-orange-700 rounded-md transition"
                   onClick={() => setSidebarOpen(false)}
                 >
-                  <X className="w-6 h-6" />
+                  <X className="w-5 h-5" />
                 </button>
               </div>
 
@@ -693,7 +697,7 @@ export default function FuelApp() {
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden font-lao bg-gray-50/50">
             <header className="h-14 md:h-16 bg-white shadow-sm flex items-center justify-between px-3 md:px-4 lg:px-8 border-b border-gray-100 flex-shrink-0 z-10">
               <button
-                className="md:hidden p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition"
+                className="md:hidden p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition shrink-0"
                 onClick={() => setSidebarOpen(true)}
               >
                 <Menu className="w-6 h-6" />
@@ -708,7 +712,7 @@ export default function FuelApp() {
                 {view === "report" && "ລາຍງານການເຕີມນ້ຳມັນ"}
                 {view === "users" && "ການຈັດການຜູ້ໃຊ້ງານ"}
               </div>
-              <div className="flex items-center space-x-2 md:space-x-4 text-xs md:text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1.5 md:px-4 md:py-2 rounded-lg whitespace-nowrap">
+              <div className="flex items-center space-x-2 md:space-x-4 text-xs md:text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1.5 md:px-4 md:py-2 rounded-lg whitespace-nowrap shrink-0">
                 <span>ວັນທີ: {formatDateDisplay(new Date())}</span>
               </div>
             </header>
@@ -784,6 +788,10 @@ function Footer() {
             src={LOGO_URL}
             alt="Logo"
             className="h-5 md:h-6 object-contain rounded"
+            onError={(e) => {
+              e.target.onerror = null;
+              e.target.alt = "P&P Logo";
+            }}
           />
           <span className="font-bold text-gray-700">
             P AND P Trading Export-Import Co., Ltd
@@ -793,7 +801,9 @@ function Footer() {
         <div className="text-center md:text-right">
           <p>
             ພັດທະນາໂດຍ:{" "}
-            <span className="font-semibold text-orange-600">ທີມງານພັດທະນາ</span>
+            <span className="font-semibold text-orange-600">
+              K. VANSOUANSENGPHET
+            </span>
           </p>
         </div>
       </div>
@@ -1268,13 +1278,14 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars, onRefresh }) {
             ຄົ້ນຫາຕາມວັນທີ:
           </label>
           <div className="relative w-full min-w-0">
+            {/* ປັບ Padding ໃຫ້ພໍດີກັບ Mobile ບໍ່ໃຫ້ຕົວໜັງສືລົ້ນ */}
             <input
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="w-full min-w-0 pl-8 md:pl-10 pr-3 md:pr-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-xs md:text-sm font-medium bg-gray-50 focus:bg-white box-border"
+              className="w-full min-w-0 pl-7 md:pl-10 pr-2 md:pr-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-xs md:text-sm font-medium bg-gray-50 focus:bg-white box-border"
             />
-            <Filter className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-3 md:left-3.5 top-2.5 md:top-3" />
+            <Filter className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-2.5 md:left-3.5 top-2.5 md:top-3 pointer-events-none" />
           </div>
         </div>
         <div className="flex flex-col z-20 relative min-w-0 w-full">
@@ -1529,13 +1540,14 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
               <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                 ວັນທີ
               </label>
+              {/* ປັບ Padding ໃຫ້ພໍດີກັບ Mobile */}
               <input
                 type="date"
                 name="date"
                 required
                 value={formData.date}
                 onChange={handleChange}
-                className="w-full min-w-0 px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border max-w-full"
+                className="w-full min-w-0 px-2 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-xs md:text-base box-border"
               />
             </div>
 
@@ -2287,7 +2299,7 @@ function FuelReport({ logs, cars, onRefresh }) {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full min-w-0 px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border"
+                className="w-full min-w-0 px-2 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border"
               />
             </div>
           </div>
@@ -2300,7 +2312,7 @@ function FuelReport({ logs, cars, onRefresh }) {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full min-w-0 px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border"
+                className="w-full min-w-0 px-2 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border"
               />
             </div>
           </div>
