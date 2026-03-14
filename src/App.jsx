@@ -35,9 +35,8 @@ import LOGO_URL from "./assets/Logo_P&P.jpg";
 const API_URL =
   "https://script.google.com/macros/s/AKfycbxUEqs7nHH2Mz6zp3CzwDNVwLqXwA1S8w4SGobcflKJ56-EaYNm3RXvK8nAiCGENg/exec";
 
-// ໝາຍເຫດ: ສຳລັບໂປຣເຈັກຕົວຈິງຂອງທ່ານ ໃຫ້ໃຊ້ເປັນ `import LOGO_URL from './assets/Logo_P&P.jpg';`
-// ແຕ່ໃນລະບົບ Canvas ນີ້ບໍ່ມີໄຟລ໌ຮູບດັ່ງກ່າວ ຈຶ່ງເຮັດໃຫ້ເກີດ Error. ຂ້າພະເຈົ້າຈຶ່ງຂໍອະນຸຍາດໃຊ້ເປັນ Link ຮູບພາບເພື່ອໃຫ້ລະບົບສະແດງຜົນໄດ້ครับ.
-// const LOGO_URL = 'https://drive.google.com/uc?export=view&id=192yEGEA_z0E4dGbqHd3ae6kyTRriLmzm';
+// ໃຊ້ເປັນ String URL ເພື່ອບໍ່ໃຫ້ລະບົບ Bundler (Vite) ເກີດ Error ເວລາບໍ່ພົບໄຟລ໌
+// const LOGO_URL = "./assets/Logo_P&P.jpg";
 
 // --- ກຳນົດສິດການເຂົ້າເຖິງເມນູຂອງແຕ່ລະ Role ---
 const roleMenuAccess = {
@@ -587,7 +586,6 @@ export default function FuelApp() {
             className={`fixed inset-y-0 left-0 z-50 w-[300px] bg-white shadow-xl transform transition-transform duration-300 ease-in-out ${sidebarOpen ? "translate-x-0" : "-translate-x-full"} md:translate-x-0 md:static md:inset-0 flex flex-col`}
           >
             <div className="h-full flex flex-col font-lao">
-              {/* ປັບໂຄງສ້າງ Header ຂອງ Sidebar ໃຫ້ມີການຈັດລຽງທີ່ພໍດີ ແລະ ບໍ່ທັບປຸ່ມ X */}
               <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 bg-orange-500 text-white flex-shrink-0 w-full">
                 <div className="flex items-center space-x-2 font-bold min-w-0 flex-1 pr-2">
                   <span className="text-sm md:text-lg truncate">
@@ -1276,19 +1274,19 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars, onRefresh }) {
       </div>
 
       <div className="p-4 md:p-5 border-b border-gray-100 bg-white grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5">
-        <div className="flex flex-col z-20 relative min-w-0 w-full">
+        <div className="flex flex-col z-20 relative w-full">
           <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
             ຄົ້ນຫາຕາມວັນທີ:
           </label>
-          <div className="relative w-full min-w-0">
-            {/* ປັບ Padding ແລະ ຄວາມສູງໃຫ້ພໍດີກັບ Mobile ເທົ່າກັນທຸກຊ່ອງ */}
+          <div className="relative w-full">
+            {/* ປັບ Padding ໃຫ້ພໍດີກັບ Mobile ບໍ່ໃຫ້ຕົວໜັງສືລົ້ນ */}
             <input
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="w-full min-w-0 h-[40px] md:h-[48px] pl-8 md:pl-10 pr-3 md:pr-4 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-xs md:text-sm font-medium bg-gray-50 focus:bg-white box-border"
+              className="block w-full min-w-full h-[40px] md:h-[48px] pl-8 md:pl-10 pr-3 md:pr-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-xs md:text-sm font-medium bg-gray-50 focus:bg-white box-border appearance-none m-0"
             />
-            <Filter className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-3 md:left-3.5 top-3 md:top-3.5 pointer-events-none" />
+            <Filter className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-2.5 md:left-3.5 top-3 md:top-3.5 pointer-events-none" />
           </div>
         </div>
         <div className="flex flex-col z-20 relative min-w-0 w-full">
@@ -1538,23 +1536,23 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
         className="space-y-6 md:space-y-8"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
-          <div className="space-y-4 md:space-y-5 min-w-0">
-            <div className="relative min-w-0 w-full">
+          <div className="space-y-4 md:space-y-5 w-full">
+            <div className="relative w-full">
               <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                 ວັນທີ
               </label>
-              {/* ປັບ Padding ແລະ ຄວາມສູງໃຫ້ພໍດີກັບ Mobile */}
+              {/* ປັບ Padding ໃຫ້ພໍດີກັບ Mobile ເພື່ອແກ້ໄຂບັນຫາໃນ iOS */}
               <input
                 type="date"
                 name="date"
                 required
                 value={formData.date}
                 onChange={handleChange}
-                className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-xs md:text-base box-border"
+                className="block w-full min-w-full h-[40px] md:h-[48px] px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-xs md:text-base box-border appearance-none m-0"
               />
             </div>
 
-            <div className="z-20 relative min-w-0 w-full">
+            <div className="z-20 relative w-full">
               <SearchableSelect
                 label="ທະບຽນລົດ (ສະເພາະລົດທີ່ໄດ້ຮັບສິດ)"
                 placeholder="-- ເລືອກ ຫຼື ພິມຄົ້ນຫາທະບຽນລົດ --"
@@ -1579,7 +1577,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                   required
                   value={formData.liters}
                   onChange={handleChange}
-                  className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
+                  className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
                 />
               </div>
               <div className="min-w-0">
@@ -1592,7 +1590,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                   required
                   value={formData.pricePerLiter}
                   onChange={handleChange}
-                  className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
+                  className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
                 />
               </div>
             </div>
@@ -1645,7 +1643,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                 required
                 value={formData.odometer}
                 onChange={handleChange}
-                className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
+                className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl focus:ring-2 focus:ring-orange-500 focus:border-orange-500 outline-none transition bg-gray-50 hover:bg-white font-medium text-sm md:text-base box-border"
               />
             </div>
 
@@ -1932,7 +1930,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               onChange={(e) =>
                 setFormData({ ...formData, name: e.target.value })
               }
-              className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
+              className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
               required
             />
           </div>
@@ -1947,7 +1945,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               onChange={(e) =>
                 setFormData({ ...formData, username: e.target.value })
               }
-              className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
+              className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
               required
             />
           </div>
@@ -1962,7 +1960,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               onChange={(e) =>
                 setFormData({ ...formData, password: e.target.value })
               }
-              className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
+              className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 focus:bg-white transition font-medium text-sm md:text-base box-border"
               required
             />
           </div>
@@ -1975,7 +1973,7 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               onChange={(e) =>
                 setFormData({ ...formData, role: e.target.value })
               }
-              className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl outline-none bg-gray-50 focus:bg-white focus:ring-2 focus:ring-orange-500 transition font-bold text-sm md:text-base box-border"
+              className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 py-2.5 md:py-3 border border-gray-300 rounded-lg md:rounded-xl outline-none bg-gray-50 focus:bg-white focus:ring-2 focus:ring-orange-500 transition font-bold text-sm md:text-base box-border"
             >
               <option value="user">User</option>
               <option value="driver">Driver</option>
@@ -2303,7 +2301,7 @@ function FuelReport({ logs, cars, onRefresh }) {
                 type="date"
                 value={startDate}
                 onChange={(e) => setStartDate(e.target.value)}
-                className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border"
+                className="block w-full min-w-full h-[40px] md:h-[48px] px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border appearance-none m-0"
               />
             </div>
           </div>
@@ -2316,7 +2314,7 @@ function FuelReport({ logs, cars, onRefresh }) {
                 type="date"
                 value={endDate}
                 onChange={(e) => setEndDate(e.target.value)}
-                className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border"
+                className="block w-full min-w-full h-[40px] md:h-[48px] px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border appearance-none m-0"
               />
             </div>
           </div>
