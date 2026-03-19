@@ -35,7 +35,6 @@ import LOGO_URL from "./assets/Logo_P&P.jpg";
 const API_URL =
   "https://script.google.com/macros/s/AKfycbxUEqs7nHH2Mz6zp3CzwDNVwLqXwA1S8w4SGobcflKJ56-EaYNm3RXvK8nAiCGENg/exec";
 
-// ໃຊ້ເປັນ String URL ເພື່ອບໍ່ໃຫ້ລະບົບ Bundler (Vite) ເກີດ Error ເວລາບໍ່ພົບໄຟລ໌
 // const LOGO_URL = "./assets/Logo_P&P.jpg";
 
 // --- ກຳນົດສິດການເຂົ້າເຖິງເມນູຂອງແຕ່ລະ Role ---
@@ -46,13 +45,47 @@ const roleMenuAccess = {
   partner: ["dashboard", "report"], // Partner ເຫັນສະເພາະ ໜ້າຫຼັກ ແລະ ລາຍງານ
 };
 
-// --- Helper Functions: ສ້າງ ID ແລະ ຊື່ໄຟລ໌ຮູບແບບໃໝ່ ---
+// --- Helper Function: ດຶງວັນທີ ແລະ ບັງຄັບເຂດເວລາເປັນຂອງປະເທດລາວ (Asia/Vientiane) ຮູບແບບ YYYY-MM-DD ---
+const getLaosDateString = (dateInput) => {
+  let d = dateInput ? new Date(dateInput) : new Date();
+
+  // ຖ້າ input ເປັນ string ວັນທີ (ເຊັ່ນ 2024-03-14) ທີ່ບໍ່ມີເວລາ, ໃຫ້ຕື່ມ T00:00:00 ເພື່ອປ້ອງກັນການເລື່ອນວັນທີຈາກ Timezone ເກົ່າ
+  if (typeof dateInput === "string" && dateInput.length === 10) {
+    d = new Date(`${dateInput}T00:00:00`);
+  }
+
+  if (isNaN(d.getTime())) {
+    return typeof dateInput === "string" ? dateInput.split("T")[0] : "";
+  }
+
+  // ໃຊ້ Intl.DateTimeFormat ເພື່ອບັງຄັບດຶງຄ່າວັນທີຕາມ Timezone ລາວໂດຍສະເພາະ
+  const formatter = new Intl.DateTimeFormat("en-US", {
+    timeZone: "Asia/Vientiane",
+    year: "numeric",
+    month: "2-digit",
+    day: "2-digit",
+  });
+
+  const parts = formatter.formatToParts(d);
+  const year = parts.find((p) => p.type === "year").value;
+  const month = parts.find((p) => p.type === "month").value;
+  const day = parts.find((p) => p.type === "day").value;
+
+  return `${year}-${month}-${day}`;
+};
+
+// --- Helper Function: ແຍກພາກສ່ວນວັນທີ YYYY, MM, DD ຕາມເວລາລາວ ---
+const getLaosDateParts = (dateInput) => {
+  const dateStr = getLaosDateString(dateInput);
+  if (!dateStr) return { yyyy: "", mm: "", dd: "" };
+  const [yyyy, mm, dd] = dateStr.split("-");
+  return { yyyy, mm, dd };
+};
+
+// --- Helper Functions: ສ້າງ ID ແລະ ຊື່ໄຟລ໌ຮູບແບບໃໝ່ (ອີງຕາມເວລາລາວ) ---
 const generateLogId = (dateStr, allLogs) => {
-  const d = new Date(dateStr);
-  if (isNaN(d.getTime())) return Date.now().toString();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
+  const { yyyy, mm, dd } = getLaosDateParts(dateStr);
+  if (!yyyy) return Date.now().toString();
   const prefix = `${yyyy}${mm}${dd}`;
 
   const todaysLogs = allLogs.filter(
@@ -67,9 +100,7 @@ const generateLogId = (dateStr, allLogs) => {
 };
 
 const generateUserId = (allUsers) => {
-  const d = new Date();
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
+  const { yyyy, mm } = getLaosDateParts(new Date());
   const prefix = `${yyyy}${mm}`;
 
   const monthUsers = allUsers.filter(
@@ -84,10 +115,8 @@ const generateUserId = (allUsers) => {
 };
 
 const generateImageFilename = (type, plate, dateStr, allLogs, currentId) => {
-  const d = new Date(dateStr);
-  const prefixDate = !isNaN(d.getTime())
-    ? `${d.getFullYear()}${String(d.getMonth() + 1).padStart(2, "0")}${String(d.getDate()).padStart(2, "0")}`
-    : "YYYYMMDD";
+  const { yyyy, mm, dd } = getLaosDateParts(dateStr);
+  const prefixDate = yyyy ? `${yyyy}${mm}${dd}` : "YYYYMMDD";
 
   const sameDayCarLogs = allLogs.filter(
     (l) =>
@@ -99,26 +128,9 @@ const generateImageFilename = (type, plate, dateStr, allLogs, currentId) => {
   return `${type}_${plate}_${prefixDate}${String(seq).padStart(2, "0")}`;
 };
 
-// --- Helper Function: ແປງວັນທີເປັນ YYYY-MM-DD ຕາມ Timezone ທ້ອງຖິ່ນ ---
-const getLocalYYYYMMDD = (dateInput) => {
-  if (!dateInput) return "";
-  let dStr = dateInput;
-  if (typeof dStr === "string" && dStr.includes("T")) {
-    dStr = dStr.split("T")[0];
-  }
-  let d = new Date(dStr);
-  if (isNaN(d.getTime())) {
-    return typeof dStr === "string" ? dStr : "";
-  }
-  const yyyy = d.getFullYear();
-  const mm = String(d.getMonth() + 1).padStart(2, "0");
-  const dd = String(d.getDate()).padStart(2, "0");
-  return `${yyyy}-${mm}-${dd}`;
-};
-
 // --- Helper Function: ແປງຮູບແບບວັນທີເປັນ DD/MM/YYYY ---
 const formatDateDisplay = (dateInput) => {
-  const ymd = getLocalYYYYMMDD(dateInput);
+  const ymd = getLaosDateString(dateInput);
   if (ymd && typeof ymd === "string" && ymd.includes("-")) {
     const parts = ymd.split("-");
     if (parts.length === 3) return `${parts[2]}/${parts[1]}/${parts[0]}`;
@@ -337,7 +349,7 @@ export default function FuelApp() {
       odoFileName,
       createdAt: isEdit
         ? formData.createdAt
-        : new Date().toLocaleString("lo-LA"),
+        : new Date().toLocaleString("lo-LA", { timeZone: "Asia/Vientiane" }),
       createdBy: isEdit ? formData.createdBy : user.name,
     };
 
@@ -813,7 +825,7 @@ function Footer() {
 }
 
 // --- Component ສຳລັບສ້າງກາຟ (Responsive) ---
-function MonthlyChart({ data }) {
+function FuelChart({ data }) {
   const containerRef = useRef(null);
   const [viewBoxWidth, setViewBoxWidth] = useState(800);
 
@@ -843,16 +855,21 @@ function MonthlyChart({ data }) {
 
   const viewBoxHeight = 300;
   const isMobile = viewBoxWidth < 500;
+
+  // ເພີ່ມ bottom padding ຖ້າຂໍ້ມູນມີຫຼາຍ ເພື່ອໃຫ້ພໍດີກັບຕົວໜັງສືທີ່ອຽງລົງ
+  const bottomPad = data.length > 12 ? 60 : 40;
   const padding = {
     top: 40,
     right: isMobile ? 45 : 60,
-    bottom: 40,
+    bottom: bottomPad,
     left: isMobile ? 45 : 60,
   };
+
   const width = viewBoxWidth - padding.left - padding.right;
   const height = viewBoxHeight - padding.top - padding.bottom;
 
   const barWidth = Math.min(48, (width / data.length) * (isMobile ? 0.6 : 0.5));
+  const showValues = data.length <= 15; // ເຊື່ອງຕົວເລກເທິງແທ່ງກາຟຖ້າຂໍ້ມູນມີຫຼາຍກວ່າ 15 ອັນ ເພື່ອບໍ່ໃຫ້ມັນອັ່ງ
 
   const points = data.map((d, i) => {
     const x = padding.left + (i + 0.5) * (width / data.length);
@@ -947,6 +964,9 @@ function MonthlyChart({ data }) {
           {/* Bars (Liters) */}
           {points.map((p, i) => {
             const barHeight = padding.top + height - p.yBar;
+            const isMany = data.length > 12;
+            const labelY = viewBoxHeight - padding.bottom + (isMany ? 25 : 20);
+
             return (
               <g key={`bar-${i}`}>
                 <rect
@@ -958,17 +978,20 @@ function MonthlyChart({ data }) {
                   rx="4"
                   className="hover:fill-orange-400 transition-colors cursor-pointer"
                 />
+
                 <text
                   x={p.x}
-                  y={viewBoxHeight - padding.bottom + 20}
-                  textAnchor="middle"
+                  y={labelY}
+                  textAnchor={isMany ? "end" : "middle"}
                   fill="#4b5563"
-                  fontSize={isMobile ? "10" : "12"}
+                  fontSize={isMobile ? "9" : "11"}
                   fontWeight="bold"
+                  transform={isMany ? `rotate(-45, ${p.x}, ${labelY})` : ""}
                 >
                   {p.label}
                 </text>
-                {p.liters > 0 && (
+
+                {showValues && p.liters > 0 && (
                   <>
                     <text
                       x={p.x}
@@ -977,7 +1000,7 @@ function MonthlyChart({ data }) {
                       stroke="white"
                       strokeWidth="3"
                       strokeLinejoin="round"
-                      fontSize={isMobile ? "11" : "12"}
+                      fontSize={isMobile ? "10" : "11"}
                       fontWeight="900"
                     >
                       {formatInteger(p.liters)}
@@ -987,7 +1010,7 @@ function MonthlyChart({ data }) {
                       y={p.litY}
                       textAnchor="middle"
                       fill="#ea580c"
-                      fontSize={isMobile ? "11" : "12"}
+                      fontSize={isMobile ? "10" : "11"}
                       fontWeight="900"
                     >
                       {formatInteger(p.liters)}
@@ -1012,13 +1035,13 @@ function MonthlyChart({ data }) {
               <circle
                 cx={p.x}
                 cy={p.yLine}
-                r={isMobile ? "4" : "5"}
+                r={isMobile ? "3" : "4"}
                 fill="#ffffff"
                 stroke="#3b82f6"
                 strokeWidth="2"
                 className="cursor-pointer transition-all"
               />
-              {p.consumption > 0 && (
+              {showValues && p.consumption > 0 && (
                 <>
                   <text
                     x={p.x}
@@ -1027,7 +1050,7 @@ function MonthlyChart({ data }) {
                     stroke="white"
                     strokeWidth="3"
                     strokeLinejoin="round"
-                    fontSize={isMobile ? "11" : "12"}
+                    fontSize={isMobile ? "10" : "11"}
                     fontWeight="900"
                   >
                     {formatNumber(p.consumption)}
@@ -1037,7 +1060,7 @@ function MonthlyChart({ data }) {
                     y={p.consY}
                     textAnchor="middle"
                     fill="#2563eb"
-                    fontSize={isMobile ? "11" : "12"}
+                    fontSize={isMobile ? "10" : "11"}
                     fontWeight="900"
                   >
                     {formatNumber(p.consumption)}
@@ -1079,7 +1102,7 @@ function Dashboard({ logs, cars }) {
   const monthlyData = useMemo(() => {
     const grouped = {};
     logs.forEach((log) => {
-      const localDateStr = getLocalYYYYMMDD(log.date);
+      const localDateStr = getLaosDateString(log.date);
       if (!localDateStr) return;
       const monthKey = localDateStr.substring(0, 7); // "YYYY-MM"
       if (!grouped[monthKey]) {
@@ -1116,7 +1139,6 @@ function Dashboard({ logs, cars }) {
 
   return (
     <div className="space-y-4 md:space-y-6 animate-in slide-in-from-bottom-4 duration-300">
-      {/* ປ່ຽນການຈັດລຽງ: ຈຳນວນລົດ -> ຈຳນວນຄັ້ງ -> ນ້ຳມັນລວມ -> ຄ່າໃຊ້ຈ່າຍ */}
       <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-6">
         <div className="bg-white p-3 md:p-6 rounded-xl md:rounded-2xl shadow-sm border border-gray-100 flex items-center space-x-3 md:space-x-4 hover:shadow-md transition overflow-hidden">
           <div className="bg-purple-100 p-2.5 md:p-4 rounded-full text-purple-500 shrink-0">
@@ -1189,7 +1211,7 @@ function Dashboard({ logs, cars }) {
           <BarChart3 className="w-4 h-4 md:w-5 md:h-5 mr-2 text-orange-500" />{" "}
           ກາຟປະລິມານນ້ຳມັນ ແລະ ອັດຕາການສິ້ນເປືອງ (6 ເດືອນຫຼ້າສຸດ)
         </h3>
-        <MonthlyChart data={monthlyData} />
+        <FuelChart data={monthlyData} />
       </div>
     </div>
   );
@@ -1205,7 +1227,7 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars, onRefresh }) {
   });
 
   const filteredLogs = logs.filter((log) => {
-    const logDateLocal = getLocalYYYYMMDD(log.date);
+    const logDateLocal = getLaosDateString(log.date);
     const matchDate = filterDate ? logDateLocal === filterDate : true;
     const matchPlate = filterPlate ? log.licensePlate === filterPlate : true;
     return matchDate && matchPlate;
@@ -1274,12 +1296,11 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars, onRefresh }) {
       </div>
 
       <div className="p-4 md:p-5 border-b border-gray-100 bg-white grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5">
-        <div className="flex flex-col z-20 relative w-full">
+        <div className="flex flex-col z-20 relative min-w-0 w-full">
           <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
             ຄົ້ນຫາຕາມວັນທີ:
           </label>
-          <div className="relative w-full">
-            {/* ປັບ Padding ໃຫ້ພໍດີກັບ Mobile ບໍ່ໃຫ້ຕົວໜັງສືລົ້ນ */}
+          <div className="relative w-full min-w-0">
             <input
               type="date"
               value={filterDate}
@@ -1458,11 +1479,11 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars, onRefresh }) {
 function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
   const [formData, setFormData] = useState(() => {
     if (initialData) {
-      let editDate = getLocalYYYYMMDD(initialData.date) || "";
+      let editDate = getLaosDateString(initialData.date) || "";
       return { ...initialData, date: editDate };
     }
     return {
-      date: new Date().toISOString().split("T")[0],
+      date: getLaosDateString(new Date()),
       licensePlate: "",
       liters: "",
       pricePerLiter: "",
@@ -1536,12 +1557,11 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
         className="space-y-6 md:space-y-8"
       >
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
-          <div className="space-y-4 md:space-y-5 w-full">
-            <div className="relative w-full">
+          <div className="space-y-4 md:space-y-5 min-w-0">
+            <div className="relative min-w-0 w-full">
               <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                 ວັນທີ
               </label>
-              {/* ປັບ Padding ໃຫ້ພໍດີກັບ Mobile ເພື່ອແກ້ໄຂບັນຫາໃນ iOS */}
               <input
                 type="date"
                 name="date"
@@ -1552,7 +1572,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
               />
             </div>
 
-            <div className="z-20 relative w-full">
+            <div className="z-20 relative min-w-0 w-full">
               <SearchableSelect
                 label="ທະບຽນລົດ (ສະເພາະລົດທີ່ໄດ້ຮັບສິດ)"
                 placeholder="-- ເລືອກ ຫຼື ພິມຄົ້ນຫາທະບຽນລົດ --"
@@ -1608,7 +1628,6 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                 <label className="block text-xs md:text-sm font-black text-gray-800 mb-1.5 md:mb-2">
                   ລາຄາຈ່າຍຈິງ (ກີບ)
                 </label>
-                {/* ຊ່ອງລາຄາຈ່າຍຈິງເຮັດໃຫ້ສູງກວ່າໝູ່ໜ້ອຍໜຶ່ງເພື່ອຄວາມເດັ່ນຊັດ */}
                 <input
                   type="number"
                   name="actualPaid"
@@ -1680,7 +1699,6 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                       className="w-full h-full object-cover"
                       alt="Preview"
                     />
-                    {/* ແຖບປ່ຽນຮູບເວລາເອົາເມົາສ໌ໄປຊີ້ (Hover) */}
                     <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
                       <span className="text-white font-bold px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm bg-black bg-opacity-60 rounded-lg md:rounded-xl backdrop-blur-sm flex items-center space-x-1.5 md:space-x-2">
                         <Edit className="w-3 h-3 md:w-4 h-4" />{" "}
@@ -2166,7 +2184,7 @@ function FuelReport({ logs, cars, onRefresh }) {
   const [expandedGroup, setExpandedGroup] = useState(null);
 
   const filteredLogs = logs.filter((l) => {
-    const logDateStr = getLocalYYYYMMDD(l.date);
+    const logDateStr = getLaosDateString(l.date);
     const d = new Date(logDateStr);
     const start = startDate ? new Date(startDate) : null;
     const end = endDate ? new Date(endDate) : null;
@@ -2179,9 +2197,59 @@ function FuelReport({ logs, cars, onRefresh }) {
     return matchDate && matchPlate;
   });
 
+  const chartData = useMemo(() => {
+    let isDayGrouping = false;
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 31) isDayGrouping = true;
+    } else if (startDate || endDate) {
+      isDayGrouping = true;
+    }
+
+    const grouped = {};
+    filteredLogs.forEach((log) => {
+      const localDateStr = getLaosDateString(log.date);
+      if (!localDateStr) return;
+
+      let key = localDateStr;
+      let label = formatDateDisplay(localDateStr).substring(0, 5);
+
+      if (!isDayGrouping) {
+        key = localDateStr.substring(0, 7);
+        const [y, m] = key.split("-");
+        label = `${m}/${y}`;
+      }
+
+      if (!grouped[key]) {
+        grouped[key] = { key, label, liters: 0, distance: 0, validLiters: 0 };
+      }
+      const l = Number(log.liters || 0);
+      const d = Number(log.distance || 0);
+      grouped[key].liters += l;
+      if (d > 0) {
+        grouped[key].distance += d;
+        grouped[key].validLiters += l;
+      }
+    });
+
+    const sorted = Object.values(grouped).sort((a, b) =>
+      a.key.localeCompare(b.key),
+    );
+
+    return sorted.map((item) => ({
+      ...item,
+      consumption:
+        item.validLiters > 0
+          ? Number((item.distance / item.validLiters).toFixed(2))
+          : 0,
+    }));
+  }, [filteredLogs, startDate, endDate]);
+
   const summary = {};
   filteredLogs.forEach((log) => {
-    let rawDate = getLocalYYYYMMDD(log.date);
+    let rawDate = getLaosDateString(log.date);
     const key = `${rawDate}_${log.licensePlate}`;
 
     if (!summary[key]) {
@@ -2396,6 +2464,17 @@ function FuelReport({ logs, cars, onRefresh }) {
             </span>
           </div>
         </div>
+
+        {/* ກາຟລາຍງານແບບໄດນາມິກ ຕາມເງື່ອນໄຂຄົ້ນຫາ */}
+        {filteredLogs.length > 0 && (
+          <div className="bg-gray-50/50 p-4 md:p-6 rounded-xl md:rounded-2xl border border-gray-100 mb-6 md:mb-8">
+            <h4 className="text-sm md:text-base font-bold text-gray-800 mb-4 font-lao flex items-center">
+              <BarChart3 className="w-4 h-4 md:w-5 md:h-5 mr-2 text-orange-500" />{" "}
+              ກາຟສະແດງປະລິມານນ້ຳມັນ ແລະ ອັດຕາການສິ້ນເປືອງ (ຕາມເງື່ອນໄຂຄົ້ນຫາ)
+            </h4>
+            <FuelChart data={chartData} />
+          </div>
+        )}
 
         {/* Data Table */}
         <div className="overflow-x-auto border border-gray-100 rounded-xl">
