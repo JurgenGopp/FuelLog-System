@@ -35,8 +35,6 @@ import LOGO_URL from "./assets/Logo_P&P.jpg";
 const API_URL =
   "https://script.google.com/macros/s/AKfycbxUEqs7nHH2Mz6zp3CzwDNVwLqXwA1S8w4SGobcflKJ56-EaYNm3RXvK8nAiCGENg/exec";
 
-// const LOGO_URL = "./assets/Logo_P&P.jpg";
-
 // --- ກຳນົດສິດການເຂົ້າເຖິງເມນູຂອງແຕ່ລະ Role ---
 const roleMenuAccess = {
   admin: ["dashboard", "form", "list", "report", "users"],
@@ -708,14 +706,14 @@ export default function FuelApp() {
           </div>
 
           <div className="flex-1 flex flex-col min-w-0 overflow-hidden font-lao bg-gray-50/50">
-            <header className="h-14 md:h-16 bg-white shadow-sm flex items-center justify-between px-3 md:px-4 lg:px-8 border-b border-gray-100 flex-shrink-0 z-10">
+            <header className="h-14 md:h-16 bg-orange-500 shadow-md flex items-center justify-between px-3 md:px-4 lg:px-8 border-b border-orange-600 flex-shrink-0 z-10 text-white">
               <button
-                className="md:hidden p-2 text-gray-500 hover:text-orange-500 hover:bg-orange-50 rounded-lg transition shrink-0"
+                className="md:hidden p-2 text-white hover:bg-orange-600 rounded-lg transition shrink-0"
                 onClick={() => setSidebarOpen(true)}
               >
                 <Menu className="w-6 h-6" />
               </button>
-              <div className="hidden md:block text-base md:text-xl font-black text-gray-800 truncate px-2">
+              <div className="text-base md:text-xl font-black truncate px-2 flex-1 text-center md:text-left">
                 {view === "dashboard" && "ພາບລວມລະບົບ"}
                 {view === "form" &&
                   (editingId
@@ -725,7 +723,7 @@ export default function FuelApp() {
                 {view === "report" && "ລາຍງານການເຕີມນ້ຳມັນ"}
                 {view === "users" && "ການຈັດການຜູ້ໃຊ້ງານ"}
               </div>
-              <div className="flex items-center space-x-2 md:space-x-4 text-xs md:text-sm font-bold text-gray-500 bg-gray-100 px-3 py-1.5 md:px-4 md:py-2 rounded-lg whitespace-nowrap shrink-0">
+              <div className="flex items-center space-x-2 md:space-x-4 text-xs md:text-sm font-bold text-white bg-orange-600 px-3 py-1.5 md:px-4 md:py-2 rounded-lg whitespace-nowrap shrink-0 shadow-inner">
                 <span>ວັນທີ: {formatDateDisplay(new Date())}</span>
               </div>
             </header>
@@ -825,9 +823,26 @@ function Footer() {
 }
 
 // --- Component ສຳລັບສ້າງກາຟ (Responsive) ---
-function FuelChart({ data }) {
+function FuelChart({
+  data,
+  barKey = "liters",
+  barName = "ປະລິມານນ້ຳມັນ",
+  barUnit = "ລິດ",
+  formatBar = formatNumber,
+  barColor = "#fdba74",
+  barColorHover = "#f97316",
+  barTextColor = "#9a3412",
+
+  lineKey = "consumption",
+  lineName = "ອັດຕາສິ້ນເປືອງ",
+  lineUnit = "ກມ/ລິດ",
+  formatLine = formatNumber,
+  lineColor = "#3b82f6",
+  lineTextColor = "#1e3a8a",
+}) {
   const containerRef = useRef(null);
   const [viewBoxWidth, setViewBoxWidth] = useState(800);
+  const [tooltip, setTooltip] = useState(null);
 
   useEffect(() => {
     const updateWidth = () => {
@@ -842,6 +857,15 @@ function FuelChart({ data }) {
     return () => window.removeEventListener("resize", updateWidth);
   }, []);
 
+  // ສຳລັບປິດ Popup ເວລາຄິກບ່ອນອື່ນເທິງໜ້າຈໍ
+  useEffect(() => {
+    const handleClickOutside = () => {
+      if (tooltip) setTooltip(null);
+    };
+    document.addEventListener("click", handleClickOutside);
+    return () => document.removeEventListener("click", handleClickOutside);
+  }, [tooltip]);
+
   if (!data || data.length === 0) {
     return (
       <div className="text-center py-12 md:py-16 text-xs md:text-sm text-gray-400 font-medium bg-gray-50 rounded-xl border border-dashed border-gray-200">
@@ -850,8 +874,8 @@ function FuelChart({ data }) {
     );
   }
 
-  const maxLiters = Math.max(...data.map((d) => d.liters), 10) * 1.15;
-  const maxCons = Math.max(...data.map((d) => d.consumption), 5) * 1.15;
+  const maxBarVal = Math.max(...data.map((d) => d[barKey] || 0), 10) * 1.15;
+  const maxLineVal = Math.max(...data.map((d) => d[lineKey] || 0), 5) * 1.15;
 
   const viewBoxHeight = 300;
   const isMobile = viewBoxWidth < 500;
@@ -860,7 +884,7 @@ function FuelChart({ data }) {
   const bottomPad = data.length > 12 ? 60 : 40;
   const padding = {
     top: 40,
-    right: isMobile ? 45 : 60,
+    right: isMobile ? 65 : 85,
     bottom: bottomPad,
     left: isMobile ? 45 : 60,
   };
@@ -873,8 +897,9 @@ function FuelChart({ data }) {
 
   const points = data.map((d, i) => {
     const x = padding.left + (i + 0.5) * (width / data.length);
-    const yBar = padding.top + height - (d.liters / maxLiters) * height;
-    const yLine = padding.top + height - (d.consumption / maxCons) * height;
+    const yBar = padding.top + height - ((d[barKey] || 0) / maxBarVal) * height;
+    const yLine =
+      padding.top + height - ((d[lineKey] || 0) / maxLineVal) * height;
 
     let litY = yBar - 10;
     let consY = yLine - 15;
@@ -895,7 +920,52 @@ function FuelChart({ data }) {
   const polylinePoints = points.map((p) => `${p.x},${p.yLine}`).join(" ");
 
   return (
-    <div className="w-full" ref={containerRef}>
+    <div className="w-full relative" ref={containerRef}>
+      {/* ປັອບອັບສະແດງລາຍລະອຽດລົດ (Tooltip) */}
+      {tooltip && (
+        <div
+          className="absolute z-50 bg-gray-900/80 backdrop-blur-md text-white p-3 rounded-xl shadow-2xl text-xs sm:text-sm transform -translate-x-1/2 -translate-y-full pointer-events-none w-56 sm:w-64 border border-gray-600/50"
+          style={{
+            left: `${(tooltip.x / viewBoxWidth) * 100}%`,
+            top: `${(tooltip.y / viewBoxHeight) * 100}%`,
+            marginTop: "-15px",
+          }}
+        >
+          {/* Tooltip Arrow */}
+          <div className="absolute w-3 h-3 bg-gray-800 border-b border-r border-gray-600/50 transform rotate-45 left-1/2 -translate-x-1/2 -bottom-1.5"></div>
+
+          <p className="font-bold border-b border-gray-600/50 pb-1.5 mb-1.5 text-center text-orange-500">
+            {tooltip.label}
+          </p>
+          {tooltip.carDetailsArray && tooltip.carDetailsArray.length > 0 ? (
+            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
+              {tooltip.carDetailsArray.map((car, idx) => (
+                <div
+                  key={idx}
+                  className="flex justify-between items-center bg-white/10 hover:bg-white/20 transition p-1.5 rounded-lg"
+                >
+                  <span className="font-bold text-gray-100 truncate pr-2 max-w-[40%]">
+                    {car.plate}
+                  </span>
+                  <div className="text-right flex flex-col">
+                    <span className="text-orange-500 font-bold">
+                      {formatInteger(car.actualPaid)} ₭
+                    </span>
+                    <span className="text-gray-300 text-[10px]">
+                      {formatNumber(car.liters)} L
+                    </span>
+                  </div>
+                </div>
+              ))}
+            </div>
+          ) : (
+            <p className="text-center text-gray-400 py-2">
+              ບໍ່ມີຂໍ້ມູນລົດແຍກຍ່ອຍ
+            </p>
+          )}
+        </div>
+      )}
+
       <div className="w-full bg-white">
         <svg
           viewBox={`0 0 ${viewBoxWidth} ${viewBoxHeight}`}
@@ -911,7 +981,7 @@ function FuelChart({ data }) {
                   y1={y}
                   x2={viewBoxWidth - padding.right}
                   y2={y}
-                  stroke="#f3f4f6"
+                  stroke="#e5e7eb"
                   strokeWidth="2"
                   strokeDasharray="4 4"
                 />
@@ -919,21 +989,21 @@ function FuelChart({ data }) {
                   x={padding.left - 8}
                   y={y + 4}
                   textAnchor="end"
-                  fill="#9ca3af"
+                  fill="#6b7280"
                   fontSize={isMobile ? "10" : "12"}
                   fontWeight="bold"
                 >
-                  {formatInteger(maxLiters * ratio)}
+                  {formatBar(maxBarVal * ratio)}
                 </text>
                 <text
                   x={viewBoxWidth - padding.right + 8}
                   y={y + 4}
                   textAnchor="start"
-                  fill="#9ca3af"
+                  fill="#6b7280"
                   fontSize={isMobile ? "10" : "12"}
                   fontWeight="bold"
                 >
-                  {formatNumber(maxCons * ratio)}
+                  {formatLine(maxLineVal * ratio)}
                 </text>
               </g>
             );
@@ -944,46 +1014,69 @@ function FuelChart({ data }) {
             x={padding.left - 8}
             y={padding.top - 15}
             textAnchor="end"
-            fill="#ea580c"
+            fill={barTextColor}
             fontSize={isMobile ? "10" : "12"}
             fontWeight="900"
           >
-            ລິດ (L)
+            {barUnit}
           </text>
           <text
             x={viewBoxWidth - padding.right + 8}
             y={padding.top - 15}
             textAnchor="start"
-            fill="#2563eb"
+            fill={lineTextColor}
             fontSize={isMobile ? "10" : "12"}
             fontWeight="900"
           >
-            ກມ/ລິດ
+            {lineUnit}
           </text>
 
-          {/* Bars (Liters) */}
+          {/* Bars */}
           {points.map((p, i) => {
             const barHeight = padding.top + height - p.yBar;
             const isMany = data.length > 12;
             const labelY = viewBoxHeight - padding.bottom + (isMany ? 25 : 20);
+            const isHovered = tooltip && tooltip.key === p.key;
 
             return (
-              <g key={`bar-${i}`}>
+              <g
+                key={`bar-${i}`}
+                onMouseEnter={() => setTooltip({ ...p, y: p.yBar })}
+                onMouseLeave={() => setTooltip(null)}
+                onClick={(e) => {
+                  e.stopPropagation();
+                  setTooltip(
+                    tooltip && tooltip.key === p.key
+                      ? null
+                      : { ...p, y: p.yBar },
+                  );
+                }}
+                className="cursor-pointer"
+              >
+                {/* ພື້ນທີ່ໂປ່ງໃສເພີ່ມພື້ນທີ່ຮັບການຄລິກ/hover */}
+                <rect
+                  x={p.x - barWidth}
+                  y={padding.top}
+                  width={barWidth * 2}
+                  height={height}
+                  fill="transparent"
+                />
+
                 <rect
                   x={p.x - barWidth / 2}
                   y={p.yBar}
                   width={barWidth}
                   height={Math.max(0, barHeight)}
-                  fill="#fed7aa"
+                  fill={isHovered ? barColorHover : barColor}
                   rx="4"
-                  className="hover:fill-orange-400 transition-colors cursor-pointer"
+                  className="transition-colors duration-200"
                 />
 
                 <text
                   x={p.x}
                   y={labelY}
                   textAnchor={isMany ? "end" : "middle"}
-                  fill="#4b5563"
+                  fill="#1f2937"
                   fontSize={isMobile ? "9" : "11"}
                   fontWeight="bold"
                   transform={isMany ? `rotate(-45, ${p.x}, ${labelY})` : ""}
@@ -991,7 +1084,7 @@ function FuelChart({ data }) {
                   {p.label}
                 </text>
 
-                {showValues && p.liters > 0 && (
+                {showValues && p[barKey] > 0 && (
                   <>
                     <text
                       x={p.x}
@@ -1003,17 +1096,17 @@ function FuelChart({ data }) {
                       fontSize={isMobile ? "10" : "11"}
                       fontWeight="900"
                     >
-                      {formatInteger(p.liters)}
+                      {formatBar(p[barKey])}
                     </text>
                     <text
                       x={p.x}
                       y={p.litY}
                       textAnchor="middle"
-                      fill="#ea580c"
+                      fill={barTextColor}
                       fontSize={isMobile ? "10" : "11"}
                       fontWeight="900"
                     >
-                      {formatInteger(p.liters)}
+                      {formatBar(p[barKey])}
                     </text>
                   </>
                 )}
@@ -1021,27 +1114,27 @@ function FuelChart({ data }) {
             );
           })}
 
-          {/* Line (Consumption) */}
+          {/* Line */}
           <polyline
             points={polylinePoints}
             fill="none"
-            stroke="#3b82f6"
+            stroke={lineColor}
             strokeWidth={isMobile ? "2" : "3"}
+            pointerEvents="none"
           />
 
-          {/* Points (Consumption) */}
+          {/* Points */}
           {points.map((p, i) => (
-            <g key={`point-${i}`}>
+            <g key={`point-${i}`} pointerEvents="none">
               <circle
                 cx={p.x}
                 cy={p.yLine}
                 r={isMobile ? "3" : "4"}
                 fill="#ffffff"
-                stroke="#3b82f6"
+                stroke={lineColor}
                 strokeWidth="2"
-                className="cursor-pointer transition-all"
               />
-              {showValues && p.consumption > 0 && (
+              {showValues && p[lineKey] > 0 && (
                 <>
                   <text
                     x={p.x}
@@ -1053,17 +1146,17 @@ function FuelChart({ data }) {
                     fontSize={isMobile ? "10" : "11"}
                     fontWeight="900"
                   >
-                    {formatNumber(p.consumption)}
+                    {formatLine(p[lineKey])}
                   </text>
                   <text
                     x={p.x}
                     y={p.consY}
                     textAnchor="middle"
-                    fill="#2563eb"
+                    fill={lineTextColor}
                     fontSize={isMobile ? "10" : "11"}
                     fontWeight="900"
                   >
-                    {formatNumber(p.consumption)}
+                    {formatLine(p[lineKey])}
                   </text>
                 </>
               )}
@@ -1074,13 +1167,26 @@ function FuelChart({ data }) {
         {/* Legend */}
         <div className="flex flex-wrap justify-center gap-x-4 gap-y-2 mt-4 md:mt-6 text-xs md:text-sm text-gray-600 font-bold font-lao">
           <div className="flex items-center space-x-1.5 md:space-x-2">
-            <div className="w-3 h-3 md:w-4 md:h-4 bg-orange-200 rounded"></div>
-            <span>ປະລິມານນ້ຳມັນ (ລິດ)</span>
+            <div
+              className="w-3 h-3 md:w-4 md:h-4 rounded"
+              style={{ backgroundColor: barColor }}
+            ></div>
+            <span>
+              {barName} ({barUnit})
+            </span>
           </div>
           <div className="flex items-center space-x-1.5 md:space-x-2">
-            <div className="w-3 h-1 md:w-4 md:h-1 bg-blue-500 rounded"></div>
-            <div className="w-2.5 h-2.5 md:w-3 md:h-3 bg-white border-2 border-blue-500 rounded-full -ml-2.5 md:-ml-3"></div>
-            <span>ອັດຕາສິ້ນເປືອງ (ກມ/ລິດ)</span>
+            <div
+              className="w-3 h-1 md:w-4 md:h-1 rounded"
+              style={{ backgroundColor: lineColor }}
+            ></div>
+            <div
+              className="w-2.5 h-2.5 md:w-3 md:h-3 bg-white border-2 rounded-full -ml-2.5 md:-ml-3"
+              style={{ borderColor: lineColor }}
+            ></div>
+            <span>
+              {lineName} ({lineUnit})
+            </span>
           </div>
         </div>
       </div>
@@ -1108,33 +1214,56 @@ function Dashboard({ logs, cars }) {
       if (!grouped[monthKey]) {
         const [y, m] = monthKey.split("-");
         grouped[monthKey] = {
-          monthKey,
+          key: monthKey,
           label: `${m}/${y}`,
           liters: 0,
           distance: 0,
           validLiters: 0,
+          actualPaid: 0,
+          cars: {},
         };
       }
       const l = Number(log.liters || 0);
       const d = Number(log.distance || 0);
+      const p = Number(log.actualPaid || 0);
+      const plate = log.licensePlate || "ບໍ່ລະບຸ";
+
       grouped[monthKey].liters += l;
+      grouped[monthKey].actualPaid += p;
       if (d > 0) {
         grouped[monthKey].distance += d;
         grouped[monthKey].validLiters += l;
       }
+
+      if (!grouped[monthKey].cars[plate]) {
+        grouped[monthKey].cars[plate] = { liters: 0, actualPaid: 0 };
+      }
+      grouped[monthKey].cars[plate].liters += l;
+      grouped[monthKey].cars[plate].actualPaid += p;
     });
 
     const sorted = Object.values(grouped)
-      .sort((a, b) => a.monthKey.localeCompare(b.monthKey))
+      .sort((a, b) => a.key.localeCompare(b.key))
       .slice(-6);
 
-    return sorted.map((item) => ({
-      ...item,
-      consumption:
-        item.validLiters > 0
-          ? Number((item.distance / item.validLiters).toFixed(2))
-          : 0,
-    }));
+    return sorted.map((item) => {
+      const carDetailsArray = Object.keys(item.cars)
+        .map((plate) => ({
+          plate,
+          liters: item.cars[plate].liters,
+          actualPaid: item.cars[plate].actualPaid,
+        }))
+        .sort((a, b) => b.actualPaid - a.actualPaid); // ລຽງຕາມຍອດເງິນຫຼາຍໄປໜ້ອຍ
+
+      return {
+        ...item,
+        carDetailsArray,
+        consumption:
+          item.validLiters > 0
+            ? Number((item.distance / item.validLiters).toFixed(2))
+            : 0,
+      };
+    });
   }, [logs]);
 
   return (
@@ -1194,7 +1323,7 @@ function Dashboard({ logs, cars }) {
           </div>
           <div className="min-w-0 flex-1">
             <p className="text-gray-500 text-[10px] md:text-sm font-bold truncate">
-              ຄ່າໃຊ້ຈ່າຍລວມ (ກີບ)
+              ຄ່ານ້ຳມັນລວມ (ກີບ)
             </p>
             <p
               className="text-lg md:text-2xl lg:text-3xl font-black text-gray-800 truncate"
@@ -1209,9 +1338,24 @@ function Dashboard({ logs, cars }) {
       <div className="bg-white p-4 md:p-8 rounded-xl md:rounded-2xl shadow-sm border border-gray-100">
         <h3 className="text-sm md:text-lg font-bold text-gray-800 mb-4 md:mb-6 font-lao flex items-center">
           <BarChart3 className="w-4 h-4 md:w-5 md:h-5 mr-2 text-orange-500" />{" "}
-          ກາຟປະລິມານນ້ຳມັນ ແລະ ອັດຕາການສິ້ນເປືອງ (6 ເດືອນຫຼ້າສຸດ)
+          ກາຟຄ່ານ້ຳມັນລວມ ແລະ ປະລິມານນ້ຳມັນ (6 ເດືອນຫຼ້າສຸດ)
         </h3>
-        <FuelChart data={monthlyData} />
+        <FuelChart
+          data={monthlyData}
+          barKey="actualPaid"
+          barName="ຄ່ານ້ຳມັນລວມ"
+          barUnit="ກີບ"
+          formatBar={formatInteger}
+          barColor="#fdba74"
+          barColorHover="#f97316"
+          barTextColor="#9a3412"
+          lineKey="liters"
+          lineName="ປະລິມານນ້ຳມັນ"
+          lineUnit="ລິດ"
+          formatLine={formatNumber}
+          lineColor="#3b82f6"
+          lineTextColor="#1e3a8a"
+        />
       </div>
     </div>
   );
@@ -1278,7 +1422,6 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars, onRefresh }) {
       <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
         <h3 className="text-base md:text-lg font-bold text-gray-800 font-lao flex items-center space-x-2">
           <span>ປະຫວັດການໃສ່ນ້ຳມັນ</span>
-          {/* ປຸ່ມ Refresh (ດຶງຂໍ້ມູນໃໝ່) */}
           <button
             onClick={onRefresh}
             className="p-1.5 md:p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition"
@@ -1307,7 +1450,7 @@ function LogList({ logs, onEdit, onDelete, setView, role, cars, onRefresh }) {
               onChange={(e) => setFilterDate(e.target.value)}
               className="block w-full min-w-full h-[40px] md:h-[48px] pl-8 md:pl-10 pr-3 md:pr-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-xs md:text-sm font-medium bg-gray-50 focus:bg-white box-border appearance-none m-0"
             />
-            <Filter className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-2.5 md:left-3.5 top-3 md:top-3.5 pointer-events-none" />
+            <Filter className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-2.5 md:left-3.5 top-2.5 md:top-3 pointer-events-none" />
           </div>
         </div>
         <div className="flex flex-col z-20 relative min-w-0 w-full">
@@ -2223,28 +2366,57 @@ function FuelReport({ logs, cars, onRefresh }) {
       }
 
       if (!grouped[key]) {
-        grouped[key] = { key, label, liters: 0, distance: 0, validLiters: 0 };
+        grouped[key] = {
+          key,
+          label,
+          liters: 0,
+          distance: 0,
+          validLiters: 0,
+          actualPaid: 0,
+          cars: {},
+        };
       }
       const l = Number(log.liters || 0);
       const d = Number(log.distance || 0);
+      const p = Number(log.actualPaid || 0);
+      const plate = log.licensePlate || "ບໍ່ລະບຸ";
+
       grouped[key].liters += l;
+      grouped[key].actualPaid += p;
       if (d > 0) {
         grouped[key].distance += d;
         grouped[key].validLiters += l;
       }
+
+      if (!grouped[key].cars[plate]) {
+        grouped[key].cars[plate] = { liters: 0, actualPaid: 0 };
+      }
+      grouped[key].cars[plate].liters += l;
+      grouped[key].cars[plate].actualPaid += p;
     });
 
     const sorted = Object.values(grouped).sort((a, b) =>
       a.key.localeCompare(b.key),
     );
 
-    return sorted.map((item) => ({
-      ...item,
-      consumption:
-        item.validLiters > 0
-          ? Number((item.distance / item.validLiters).toFixed(2))
-          : 0,
-    }));
+    return sorted.map((item) => {
+      const carDetailsArray = Object.keys(item.cars)
+        .map((plate) => ({
+          plate,
+          liters: item.cars[plate].liters,
+          actualPaid: item.cars[plate].actualPaid,
+        }))
+        .sort((a, b) => b.actualPaid - a.actualPaid); // ລຽງຕາມຍອດເງິນຫຼາຍໄປໜ້ອຍ
+
+      return {
+        ...item,
+        carDetailsArray,
+        consumption:
+          item.validLiters > 0
+            ? Number((item.distance / item.validLiters).toFixed(2))
+            : 0,
+      };
+    });
   }, [filteredLogs, startDate, endDate]);
 
   const summary = {};
@@ -2429,7 +2601,7 @@ function FuelReport({ logs, cars, onRefresh }) {
           </div>
           <div className="bg-green-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-green-100 flex flex-col justify-center shadow-inner min-w-0">
             <span className="text-green-800 font-bold text-[10px] md:text-sm mb-0.5 md:mb-1 truncate">
-              ລວມຄ່າໃຊ້ຈ່າຍ (ທີ່ກັ່ນຕອງ):
+              ລວມຄ່ານ້ຳມັນ (ທີ່ກັ່ນຕອງ):
             </span>
             <span
               className="text-lg md:text-2xl font-black text-green-600 truncate"
@@ -2470,9 +2642,24 @@ function FuelReport({ logs, cars, onRefresh }) {
           <div className="bg-gray-50/50 p-4 md:p-6 rounded-xl md:rounded-2xl border border-gray-100 mb-6 md:mb-8">
             <h4 className="text-sm md:text-base font-bold text-gray-800 mb-4 font-lao flex items-center">
               <BarChart3 className="w-4 h-4 md:w-5 md:h-5 mr-2 text-orange-500" />{" "}
-              ກາຟສະແດງປະລິມານນ້ຳມັນ ແລະ ອັດຕາການສິ້ນເປືອງ (ຕາມເງື່ອນໄຂຄົ້ນຫາ)
+              ກາຟສະແດງຄ່ານ້ຳມັນລວມ ແລະ ປະລິມານນ້ຳມັນ (ຕາມເງື່ອນໄຂຄົ້ນຫາ)
             </h4>
-            <FuelChart data={chartData} />
+            <FuelChart
+              data={chartData}
+              barKey="actualPaid"
+              barName="ຄ່ານ້ຳມັນລວມ"
+              barUnit="ກີບ"
+              formatBar={formatInteger}
+              barColor="#fdba74"
+              barColorHover="#f97316"
+              barTextColor="#9a3412"
+              lineKey="liters"
+              lineName="ປະລິມານນ້ຳມັນ"
+              lineUnit="ລິດ"
+              formatLine={formatNumber}
+              lineColor="#3b82f6"
+              lineTextColor="#1e3a8a"
+            />
           </div>
         )}
 
@@ -2513,7 +2700,7 @@ function FuelReport({ logs, cars, onRefresh }) {
                     className="px-3 py-3 md:px-6 md:py-4 text-right cursor-pointer hover:bg-gray-200 transition select-none font-bold bg-gray-50"
                     onClick={() => requestSort("actualPaid")}
                   >
-                    ລວມຄ່າໃຊ້ຈ່າຍ (ກີບ) {renderSortIcon("actualPaid")}
+                    ລວມຄ່ານ້ຳມັນ (ກີບ) {renderSortIcon("actualPaid")}
                   </th>
                 </tr>
               </thead>
