@@ -713,7 +713,7 @@ export default function FuelApp() {
               >
                 <Menu className="w-6 h-6" />
               </button>
-              <div className="text-base md:text-xl font-black truncate px-2 flex-1 text-center md:text-left">
+              <div className="text-base md:text-xl font-black truncate px-2 flex-1 text-left">
                 {view === "dashboard" && "ພາບລວມລະບົບ"}
                 {view === "form" &&
                   (editingId
@@ -874,8 +874,8 @@ function FuelChart({
     );
   }
 
-  const maxBarVal = Math.max(...data.map((d) => d[barKey] || 0), 10) * 1.15;
-  const maxLineVal = Math.max(...data.map((d) => d[lineKey] || 0), 5) * 1.15;
+  const maxBarVal = Math.max(...data.map((d) => d[barKey] || 0), 10) * 1.25;
+  const maxLineVal = Math.max(...data.map((d) => d[lineKey] || 0), 5) * 1.25;
 
   const viewBoxHeight = 300;
   const isMobile = viewBoxWidth < 500;
@@ -883,7 +883,7 @@ function FuelChart({
   // ເພີ່ມ bottom padding ຖ້າຂໍ້ມູນມີຫຼາຍ ເພື່ອໃຫ້ພໍດີກັບຕົວໜັງສືທີ່ອຽງລົງ
   const bottomPad = data.length > 12 ? 60 : 40;
   const padding = {
-    top: 40,
+    top: 50,
     right: isMobile ? 65 : 85,
     bottom: bottomPad,
     left: isMobile ? 45 : 60,
@@ -922,49 +922,67 @@ function FuelChart({
   return (
     <div className="w-full relative" ref={containerRef}>
       {/* ປັອບອັບສະແດງລາຍລະອຽດລົດ (Tooltip) */}
-      {tooltip && (
-        <div
-          className="absolute z-50 bg-gray-900/80 backdrop-blur-md text-white p-3 rounded-xl shadow-2xl text-xs sm:text-sm transform -translate-x-1/2 -translate-y-full pointer-events-none w-56 sm:w-64 border border-gray-600/50"
-          style={{
-            left: `${(tooltip.x / viewBoxWidth) * 100}%`,
-            top: `${(tooltip.y / viewBoxHeight) * 100}%`,
-            marginTop: "-15px",
-          }}
-        >
-          {/* Tooltip Arrow */}
-          <div className="absolute w-3 h-3 bg-gray-800 border-b border-r border-gray-600/50 transform rotate-45 left-1/2 -translate-x-1/2 -bottom-1.5"></div>
+      {tooltip &&
+        (() => {
+          const leftPercent = (tooltip.x / viewBoxWidth) * 100;
+          let translateX = "-50%";
+          let arrowLeft = "50%";
+          if (leftPercent < 25) {
+            translateX = "-20%";
+            arrowLeft = "20%";
+          } else if (leftPercent > 75) {
+            translateX = "-80%";
+            arrowLeft = "80%";
+          }
 
-          <p className="font-bold border-b border-gray-600/50 pb-1.5 mb-1.5 text-center text-orange-500">
-            {tooltip.label}
-          </p>
-          {tooltip.carDetailsArray && tooltip.carDetailsArray.length > 0 ? (
-            <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1">
-              {tooltip.carDetailsArray.map((car, idx) => (
-                <div
-                  key={idx}
-                  className="flex justify-between items-center bg-white/10 hover:bg-white/20 transition p-1.5 rounded-lg"
-                >
-                  <span className="font-bold text-gray-100 truncate pr-2 max-w-[40%]">
-                    {car.plate}
-                  </span>
-                  <div className="text-right flex flex-col">
-                    <span className="text-orange-500 font-bold">
-                      {formatInteger(car.actualPaid)} ₭
-                    </span>
-                    <span className="text-gray-300 text-[10px]">
-                      {formatNumber(car.liters)} L
-                    </span>
-                  </div>
+          return (
+            <div
+              className="absolute z-50 bg-gray-900/90 backdrop-blur-md text-white p-3 rounded-xl shadow-2xl text-xs sm:text-sm transform pointer-events-none w-max min-w-[200px] max-w-[260px] border border-gray-600/50 flex flex-col"
+              style={{
+                left: `${leftPercent}%`,
+                top: `${(tooltip.y / viewBoxHeight) * 100}%`,
+                marginTop: "-15px",
+                transform: `translate(${translateX}, -100%)`,
+              }}
+            >
+              {/* Tooltip Arrow */}
+              <div
+                className="absolute w-3 h-3 bg-gray-800 border-b border-r border-gray-600/50 transform rotate-45 -bottom-1.5"
+                style={{ left: arrowLeft, marginLeft: "-6px" }}
+              ></div>
+
+              <p className="font-bold border-b border-gray-600/50 pb-1.5 mb-1.5 text-center text-orange-400 w-full">
+                {tooltip.label}
+              </p>
+              {tooltip.carDetailsArray && tooltip.carDetailsArray.length > 0 ? (
+                <div className="space-y-1.5 max-h-40 overflow-y-auto pr-1 w-full">
+                  {tooltip.carDetailsArray.map((car, idx) => (
+                    <div
+                      key={idx}
+                      className="flex justify-between items-center bg-white/10 hover:bg-white/20 transition p-1.5 rounded-lg gap-3"
+                    >
+                      <span className="font-bold text-gray-100 truncate flex-1">
+                        {car.plate}
+                      </span>
+                      <div className="text-right flex flex-col shrink-0">
+                        <span className="text-orange-400 font-bold">
+                          {formatInteger(car.actualPaid)} ₭
+                        </span>
+                        <span className="text-gray-300 text-[10px]">
+                          {formatNumber(car.liters)} L
+                        </span>
+                      </div>
+                    </div>
+                  ))}
                 </div>
-              ))}
+              ) : (
+                <p className="text-center text-gray-400 py-2">
+                  ບໍ່ມີຂໍ້ມູນລົດແຍກຍ່ອຍ
+                </p>
+              )}
             </div>
-          ) : (
-            <p className="text-center text-gray-400 py-2">
-              ບໍ່ມີຂໍ້ມູນລົດແຍກຍ່ອຍ
-            </p>
-          )}
-        </div>
-      )}
+          );
+        })()}
 
       <div className="w-full bg-white">
         <svg
