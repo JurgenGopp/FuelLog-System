@@ -19,7 +19,7 @@ import {
   CheckCircle,
   AlertCircle,
   AlertTriangle,
-  BarChart3,
+  Activity,
   Filter,
   ArrowUpDown,
   ArrowUp,
@@ -27,27 +27,40 @@ import {
   ExternalLink,
   Car,
   RefreshCw,
+  Map as MapIcon,
+  PlusCircle,
+  MapPin,
+  Navigation,
+  Crosshair,
+  Save,
+  ArrowLeft,
+  LocateFixed,
+  Layers,
 } from "lucide-react";
 
 import LOGO_URL from "./assets/Logo_P&P.jpg";
 
-// ເຊື່ອມຕໍ່ກັບ GAS API URL ຂອງທ່ານ
+// --- ເຊື່ອມຕໍ່ກັບ GAS API URL ຫຼັກ (ບັນທຶກນ້ຳມັນ) ---
 const API_URL =
   "https://script.google.com/macros/s/AKfycbxUEqs7nHH2Mz6zp3CzwDNVwLqXwA1S8w4SGobcflKJ56-EaYNm3RXvK8nAiCGENg/exec";
 
+// --- ເຊື່ອມຕໍ່ກັບ GAS API URL (ໂລເຄຊັ໋ນລູກຄ້າ) ---
+const LOCATION_GAS_URL =
+  "https://script.google.com/macros/s/AKfycbxJxbIvQMBejY5ZmuKS3unVCvyf6ugUd-rJAQ5pljsvk7wtACW9dAjMhElY3ti6x0wT/exec";
+const GOOGLE_MAPS_API_KEY = "AIzaSyBfhXi-1tPdrU5x0TpwOLdsYVRUv-ugyIg";
+
 // --- ກຳນົດສິດການເຂົ້າເຖິງເມນູຂອງແຕ່ລະ Role ---
 const roleMenuAccess = {
-  admin: ["dashboard", "form", "list", "report", "users"],
-  user: ["dashboard", "form", "list", "report"],
-  driver: ["form", "list"],
-  partner: ["dashboard", "report"], // Partner ເຫັນສະເພາະ ໜ້າຫຼັກ ແລະ ລາຍງານ
+  admin: ["dashboard", "form", "list", "report", "users", "location"],
+  user: ["dashboard", "form", "list", "report", "location"],
+  driver: ["form", "list", "location"],
+  partner: ["dashboard", "report"],
 };
 
 // --- Helper Function: ດຶງວັນທີ ແລະ ບັງຄັບເຂດເວລາເປັນຂອງປະເທດລາວ (Asia/Vientiane) ຮູບແບບ YYYY-MM-DD ---
 const getLaosDateString = (dateInput) => {
   let d = dateInput ? new Date(dateInput) : new Date();
 
-  // ຖ້າ input ເປັນ string ວັນທີ (ເຊັ່ນ 2024-03-14) ທີ່ບໍ່ມີເວລາ, ໃຫ້ຕື່ມ T00:00:00 ເພື່ອປ້ອງກັນການເລື່ອນວັນທີຈາກ Timezone ເກົ່າ
   if (typeof dateInput === "string" && dateInput.length === 10) {
     d = new Date(`${dateInput}T00:00:00`);
   }
@@ -56,7 +69,6 @@ const getLaosDateString = (dateInput) => {
     return typeof dateInput === "string" ? dateInput.split("T")[0] : "";
   }
 
-  // ໃຊ້ Intl.DateTimeFormat ເພື່ອບັງຄັບດຶງຄ່າວັນທີຕາມ Timezone ລາວໂດຍສະເພາະ
   const formatter = new Intl.DateTimeFormat("en-US", {
     timeZone: "Asia/Vientiane",
     year: "numeric",
@@ -241,6 +253,8 @@ export default function FuelApp() {
       body, input, button, select, textarea {
         font-family: 'Noto Sans Lao', sans-serif !important;
       }
+      .gm-style-iw { padding: 0 !important; border-radius: 8px !important; }
+      .gm-style-iw-d { padding: 12px !important; overflow: hidden !important; }
     `;
     document.head.appendChild(style);
     return () => {
@@ -656,8 +670,20 @@ export default function FuelApp() {
                     }}
                     className={`w-full flex items-center space-x-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition text-sm md:text-base ${view === "report" ? "bg-orange-100 text-orange-600 font-semibold" : "text-gray-600 hover:bg-orange-50 hover:text-orange-500"}`}
                   >
-                    <BarChart3 className="w-4 h-4 md:w-5 md:h-5" />{" "}
+                    <Activity className="w-4 h-4 md:w-5 md:h-5" />{" "}
                     <span>ລາຍງານການເຕີມນ້ຳມັນ</span>
+                  </button>
+                )}
+                {hasAccess("location") && (
+                  <button
+                    onClick={() => {
+                      setView("location");
+                      setSidebarOpen(false);
+                    }}
+                    className={`w-full flex items-center space-x-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition text-sm md:text-base ${view === "location" ? "bg-orange-100 text-orange-600 font-semibold" : "text-gray-600 hover:bg-orange-50 hover:text-orange-500"}`}
+                  >
+                    <MapPin className="w-4 h-4 md:w-5 md:h-5" />{" "}
+                    <span>ໂລເຄຊັ໋ນຮ້ານຄ້າ</span>
                   </button>
                 )}
 
@@ -722,14 +748,19 @@ export default function FuelApp() {
                 {view === "list" && "ປະຫວັດການໃສ່ນ້ຳມັນ"}
                 {view === "report" && "ລາຍງານການເຕີມນ້ຳມັນ"}
                 {view === "users" && "ການຈັດການຜູ້ໃຊ້ງານ"}
+                {view === "location" && "ໂລເຄຊັ໋ນຮ້ານຄ້າລູກຄ້າ"}
               </div>
               <div className="flex items-center space-x-2 md:space-x-4 text-xs md:text-sm font-bold text-white bg-orange-600 px-3 py-1.5 md:px-4 md:py-2 rounded-lg whitespace-nowrap shrink-0 shadow-inner">
                 <span>ວັນທີ: {formatDateDisplay(new Date())}</span>
               </div>
             </header>
 
-            <main className="flex-1 overflow-y-auto p-2.5 sm:p-4 lg:p-8">
-              <div className="max-w-6xl mx-auto w-full pb-6 md:pb-8">
+            <main
+              className={`flex-1 overflow-y-auto ${view === "location" ? "p-0" : "p-2.5 sm:p-4 lg:p-8"}`}
+            >
+              <div
+                className={`${view === "location" ? "w-full h-full relative" : "max-w-6xl mx-auto w-full pb-6 md:pb-8"}`}
+              >
                 {view === "dashboard" && hasAccess("dashboard") && (
                   <Dashboard logs={visibleLogs} cars={visibleCars} />
                 )}
@@ -772,9 +803,12 @@ export default function FuelApp() {
                     onDelete={handleDeleteUser}
                   />
                 )}
+                {view === "location" && hasAccess("location") && (
+                  <StoreLocation user={user} />
+                )}
               </div>
             </main>
-            <Footer />
+            {view !== "location" && <Footer />}
           </div>
 
           {sidebarOpen && (
@@ -819,6 +853,1033 @@ function Footer() {
         </div>
       </div>
     </footer>
+  );
+}
+
+// ----------------------------------------------------
+// ໂລເຄຊັ໋ນຮ້ານຄ້າ (Store Location Component)
+// ----------------------------------------------------
+function StoreLocation({ user }) {
+  const [activeTab, setActiveTab] = useState("map"); // 'map', 'list', 'form'
+  const [customers, setCustomers] = useState([]);
+  const [loading, setLoading] = useState(true);
+  const [error, setError] = useState(null);
+  const [search, setSearch] = useState("");
+  const [scriptLoaded, setScriptLoaded] = useState(false);
+  const [userLocation, setUserLocation] = useState(null);
+
+  useEffect(() => {
+    if (window.google && window.google.maps) {
+      setScriptLoaded(true);
+    } else {
+      window.initGoogleMapForStore = () => {
+        setScriptLoaded(true);
+      };
+      const scriptId = "google-maps-script";
+      let script = document.getElementById(scriptId);
+      if (!script) {
+        script = document.createElement("script");
+        script.id = scriptId;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&loading=async&callback=initGoogleMapForStore`;
+        script.async = true;
+        script.defer = true;
+        document.head.appendChild(script);
+      } else {
+        const origCallback = window.initGoogleMapForStore;
+        window.initGoogleMapForStore = () => {
+          if (origCallback) origCallback();
+          setScriptLoaded(true);
+        };
+      }
+    }
+    fetchData();
+  }, []);
+
+  const fetchData = async () => {
+    setLoading(true);
+    setError(null);
+    try {
+      if (LOCATION_GAS_URL) {
+        const res = await fetch(LOCATION_GAS_URL, {
+          method: "GET",
+          redirect: "follow",
+        });
+
+        const text = await res.text();
+        try {
+          const json = JSON.parse(text);
+
+          if (json.status !== "success" && !json.data) {
+            setError(
+              `API ຕອບກັບຜິດພາດ: ${json.message || "ບໍ່ມີຂໍ້ມູນໃນ Sheet"}`,
+            );
+            setLoading(false);
+            return;
+          }
+
+          const mappedCustomers = (json.data || []).map((rawRow, index) => {
+            const row = {};
+            for (let key in rawRow) {
+              if (key) row[key.trim()] = rawRow[key];
+            }
+
+            const getVal = (keys) => {
+              for (let k of keys) {
+                if (row[k] !== undefined && row[k] !== null && row[k] !== "")
+                  return String(row[k]).trim();
+              }
+              return "";
+            };
+
+            let lat = "",
+              lng = "";
+            const locationStr = getVal(["location", "ທີ່ຕັ້ງ", "ພິກັດ"]);
+            if (locationStr) {
+              const parts = locationStr.split(",");
+              if (parts.length === 2) {
+                lat = parts[0].trim();
+                lng = parts[1].trim();
+              }
+            }
+
+            return {
+              id: String(row.id || `temp-id-${index}-${Date.now()}`),
+              customerCode: getVal(["ລະຫັດ", "ລະຫັດລູກຄ້າ", "customerCode"]),
+              customerName: getVal([
+                "ລາຍຊື່ລູກຄ້າ",
+                "ຊື່ລູກຄ້າ",
+                "ລາຍຊື່",
+                "customerName",
+              ]),
+              channel: getVal(["ຊ່ອງທາງ", "channel"]),
+              phone: getVal(["ເບີໂທ", "ເບີໂທຕິດຕໍ່", "ເບີໂທລະສັບ", "phone"]),
+              village: getVal(["ບ້ານ", "village"]),
+              district: getVal(["ເມືອງ", "district"]),
+              province: getVal(["ແຂວງ", "province"]),
+              lat: lat || getVal(["lat", "latitude"]),
+              lng: lng || getVal(["lng", "longitude"]),
+              salesperson: getVal([
+                "ຝ່າຍຂາຍຮັບຜິດຊອບ",
+                "ພະນັກງານຂາຍ",
+                "ຝ່າຍຂາຍ",
+                "salesperson",
+              ]),
+              createDate: getVal(["ວັນທີສ້າງ", "ວັນທີ", "createDate"]),
+              creator: getVal(["ຜູ້ສ້າງ", "creator"]),
+              salesPhone: getVal([
+                "ເບີໂທຝ່າຍຂາຍ",
+                "ເບີໂທພະນັກງານ",
+                "salesPhone",
+              ]),
+            };
+          });
+
+          setCustomers(mappedCustomers);
+        } catch (e) {
+          console.error("API Error Response:", text);
+          if (text.includes("<html") || text.includes("Sign in")) {
+            setError(
+              'ບໍ່ສາມາດດຶງຂໍ້ມູນໄດ້ ເພາະຕິດໜ້າ Login ຂອງ Google. ກະລຸນາກວດສອບການ Deploy App Script ໃນຊ່ອງ "Who has access" ຕ້ອງເລືອກເປັນ "Anyone" ເທົ່ານັ້ນ.',
+            );
+          } else {
+            setError(
+              `ຮູບແບບຂໍ້ມູນບໍ່ຖືກຕ້ອງ (Parse Error): ${text.substring(0, 100)}...`,
+            );
+          }
+        }
+      } else {
+        const localData = JSON.parse(
+          localStorage.getItem("mockCustomers") || "[]",
+        );
+        setCustomers(localData);
+      }
+    } catch (err) {
+      console.error("Error fetching data:", err);
+      setError(
+        `ການເຊື່ອມຕໍ່ຖືກບຼັອກ (CORS / Network Error). ກະລຸນາກວດສອບ URL: ${err.message}`,
+      );
+    }
+    setLoading(false);
+  };
+
+  const saveData = async (action, payload) => {
+    setLoading(true);
+    setError(null);
+    try {
+      const apiPayload = {
+        ...payload,
+        location: `${payload.lat}, ${payload.lng}`,
+        ລະຫັດ: payload.customerCode,
+        ລາຍຊື່ລູກຄ້າ: payload.customerName,
+        ຊ່ອງທາງ: payload.channel,
+        ເບີໂທ: payload.phone,
+        ບ້ານ: payload.village,
+        ເມືອງ: payload.district,
+        ແຂວງ: payload.province,
+        ຝ່າຍຂາຍຮັບຜິດຊອບ: payload.salesperson,
+        ຜູ້ສ້າງ: payload.creator || user?.name,
+      };
+
+      if (LOCATION_GAS_URL) {
+        await fetch(LOCATION_GAS_URL, {
+          method: "POST",
+          redirect: "follow",
+          headers: {
+            "Content-Type": "text/plain;charset=utf-8",
+          },
+          body: JSON.stringify({ action, payload: apiPayload }),
+        });
+        await fetchData();
+      } else {
+        let localData = JSON.parse(
+          localStorage.getItem("mockCustomers") || "[]",
+        );
+        if (action === "ADD") {
+          payload.id = Date.now().toString();
+          payload.createDate = new Date().toISOString();
+          localData.push(payload);
+        } else if (action === "EDIT") {
+          localData = localData.map((c) =>
+            c.id === payload.id ? { ...c, ...payload } : c,
+          );
+        } else if (action === "DELETE") {
+          localData = localData.filter((c) => c.id !== payload.id);
+        }
+        localStorage.setItem("mockCustomers", JSON.stringify(localData));
+        setCustomers(localData);
+      }
+    } catch (err) {
+      console.error("Error saving data:", err);
+      setError(`ບັນທຶກບໍ່ສຳເລັດ: ${err.message}`);
+    }
+    setLoading(false);
+  };
+
+  return (
+    <div className="flex flex-col w-full h-full bg-slate-50 relative overflow-hidden">
+      {error && (
+        <div className="absolute top-4 left-4 right-4 bg-red-50 border-l-4 border-red-500 p-4 rounded shadow-lg z-50 animate-in fade-in slide-in-from-top-4">
+          <h3 className="font-bold text-red-800 text-sm">ເກີດຂໍ້ຜິດພາດ:</h3>
+          <p className="text-xs mt-1 text-red-700">{error}</p>
+          <button
+            onClick={() => setError(null)}
+            className="absolute top-2 right-2 text-red-500 hover:text-red-700"
+          >
+            <X size={18} />
+          </button>
+        </div>
+      )}
+
+      <div className="flex-1 overflow-y-auto relative pb-[70px]">
+        {activeTab === "map" && (
+          <MapView
+            customers={customers}
+            search={search}
+            setSearch={setSearch}
+            scriptLoaded={scriptLoaded}
+            userLocation={userLocation}
+            setUserLocation={setUserLocation}
+            onRefresh={fetchData}
+          />
+        )}
+        {activeTab === "list" && (
+          <ListView
+            customers={customers}
+            search={search}
+            setSearch={setSearch}
+            onEdit={(c) => setActiveTab({ name: "form", data: c })}
+            onDelete={(id) => {
+              if (window.confirm("ທ່ານຕ້ອງການລຶບຂໍ້ມູນນີ້ແທ້ບໍ່?")) {
+                saveData("DELETE", { id });
+              }
+            }}
+            onRefresh={fetchData}
+          />
+        )}
+        {(activeTab === "form" || activeTab?.name === "form") && (
+          <FormView
+            initialData={activeTab?.data || null}
+            user={user}
+            onSave={(data, isEdit) => {
+              saveData(isEdit ? "EDIT" : "ADD", data);
+              setActiveTab("list");
+            }}
+            onCancel={() => setActiveTab("list")}
+            scriptLoaded={scriptLoaded}
+          />
+        )}
+      </div>
+
+      <div className="absolute bottom-0 w-full bg-white border-t border-gray-200 flex justify-around items-center p-2 pb-4 shadow-[0_-2px_10px_rgba(0,0,0,0.05)] z-20">
+        <button
+          onClick={() => setActiveTab("map")}
+          className={`flex flex-col items-center w-full py-2 ${activeTab === "map" ? "text-orange-500 font-semibold" : "text-gray-400 hover:text-gray-600"}`}
+        >
+          <MapIcon size={24} />
+          <span className="text-[11px] mt-1">ແຜນທີ່</span>
+        </button>
+        <button
+          onClick={() => setActiveTab("form")}
+          className={`flex flex-col items-center w-full py-2 relative -top-5`}
+        >
+          <div className="bg-orange-500 text-white p-3 rounded-full shadow-lg border-4 border-slate-50 hover:bg-orange-600 transition-transform active:scale-95">
+            <PlusCircle size={28} />
+          </div>
+          <span
+            className={`text-[11px] mt-1 ${activeTab === "form" || activeTab?.name === "form" ? "text-orange-500 font-semibold" : "text-gray-400 hover:text-gray-600"}`}
+          >
+            ເພີ່ມໃໝ່
+          </span>
+        </button>
+        <button
+          onClick={() => setActiveTab("list")}
+          className={`flex flex-col items-center w-full py-2 ${activeTab === "list" ? "text-orange-500 font-semibold" : "text-gray-400 hover:text-gray-600"}`}
+        >
+          <List size={24} />
+          <span className="text-[11px] mt-1">ລາຍຊື່</span>
+        </button>
+      </div>
+
+      {loading && (
+        <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
+          <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent"></div>
+        </div>
+      )}
+    </div>
+  );
+}
+
+function MapView({
+  customers,
+  search,
+  setSearch,
+  scriptLoaded,
+  userLocation,
+  setUserLocation,
+  onRefresh,
+}) {
+  const mapRef = useRef(null);
+  const [map, setMap] = useState(null);
+  const markersRef = useRef({});
+  const infoWindowRef = useRef(null);
+  const userMarkerRef = useRef(null);
+  const [showDropdown, setShowDropdown] = useState(false);
+
+  const searchKeyword = String(search || "")
+    .toLowerCase()
+    .replace(/\s/g, "");
+  const filteredCustomers = customers.filter((c) => {
+    const name = String(c.customerName || "")
+      .toLowerCase()
+      .replace(/\s/g, "");
+    const code = String(c.customerCode || "")
+      .toLowerCase()
+      .replace(/\s/g, "");
+    const id = String(c.id || "")
+      .toLowerCase()
+      .replace(/\s/g, "");
+    const phone = String(c.phone || "")
+      .toLowerCase()
+      .replace(/\s/g, "");
+
+    return (
+      name.includes(searchKeyword) ||
+      code.includes(searchKeyword) ||
+      id.includes(searchKeyword) ||
+      phone.includes(searchKeyword)
+    );
+  });
+
+  useEffect(() => {
+    if (
+      scriptLoaded &&
+      window.google &&
+      window.google.maps &&
+      mapRef.current &&
+      !map
+    ) {
+      const vteCoords = { lat: 17.9757, lng: 102.6331 };
+      const m = new window.google.maps.Map(mapRef.current, {
+        center: vteCoords,
+        zoom: 12,
+        disableDefaultUI: false,
+        zoomControl: true,
+        zoomControlOptions: {
+          position: window.google.maps.ControlPosition.RIGHT_BOTTOM,
+        },
+        mapTypeControl: true,
+        mapTypeControlOptions: {
+          style: window.google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+          position: window.google.maps.ControlPosition.TOP_LEFT,
+        },
+        scaleControl: true,
+        streetViewControl: true,
+        streetViewControlOptions: {
+          position: window.google.maps.ControlPosition.RIGHT_BOTTOM,
+        },
+        fullscreenControl: true,
+        fullscreenControlOptions: {
+          position: window.google.maps.ControlPosition.TOP_RIGHT,
+        },
+        styles: [
+          {
+            featureType: "poi",
+            elementType: "labels",
+            stylers: [{ visibility: "off" }],
+          },
+        ],
+      });
+      setMap(m);
+      infoWindowRef.current = new window.google.maps.InfoWindow();
+    }
+  }, [scriptLoaded, mapRef, map]);
+
+  const focusOnCustomer = (c) => {
+    setSearch(c.customerName);
+    setShowDropdown(false);
+    if (
+      map &&
+      markersRef.current[c.id] &&
+      window.google &&
+      window.google.maps
+    ) {
+      const lat = parseFloat(c.lat);
+      const lng = parseFloat(c.lng);
+      if (!isNaN(lat) && !isNaN(lng)) {
+        map.setCenter({ lat, lng });
+        map.setZoom(18);
+        window.google.maps.event.trigger(markersRef.current[c.id], "click");
+      }
+    }
+  };
+
+  useEffect(() => {
+    if (!map || !window.google || !window.google.maps) return;
+
+    Object.values(markersRef.current).forEach((m) => m.setMap(null));
+    markersRef.current = {};
+
+    const bounds = new window.google.maps.LatLngBounds();
+    let hasValidPoints = false;
+
+    filteredCustomers.forEach((c) => {
+      const lat = parseFloat(c.lat);
+      const lng = parseFloat(c.lng);
+
+      if (!isNaN(lat) && !isNaN(lng)) {
+        hasValidPoints = true;
+        const position = { lat, lng };
+        bounds.extend(position);
+
+        const marker = new window.google.maps.Marker({
+          position,
+          map,
+          title: c.customerName,
+          icon: {
+            path: window.google.maps.SymbolPath.CIRCLE,
+            fillColor: "#f97316",
+            fillOpacity: 1,
+            strokeWeight: 2,
+            strokeColor: "#ffffff",
+            scale: 10,
+          },
+        });
+
+        marker.addListener("click", () => {
+          const content = `
+            <div style="min-width: 200px;">
+              <h3 style="font-size: 16px; font-weight: bold; color: #1e293b; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">
+                ${c.customerName}
+              </h3>
+              <div style="font-size: 13px; color: #475569; margin-bottom: 8px; line-height: 1.5;">
+                <p style="margin: 2px 0;"><b>ລະຫັດ:</b> ${c.customerCode}</p>
+                <p style="margin: 2px 0;"><b>ເບີໂທ:</b> ${c.phone}</p>
+                <p style="margin: 2px 0;"><b>ສະຖານທີ່:</b> ບ.${c.village}, ມ.${c.district}, ຂ.${c.province}</p>
+                <p style="margin: 2px 0;"><b>ຝ່າຍຂາຍ:</b> ${c.salesperson}</p>
+              </div>
+              <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" 
+                 style="display: block; width: 100%; background: #f97316; color: white; text-align: center; padding: 8px 0; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 14px; box-shadow: 0 2px 4px rgba(249,115,22,0.3);">
+                <span style="display:flex; align-items:center; justify-content:center; gap: 4px;">
+                  <svg width="16" height="16" viewBox="0 0 24 24" fill="none" stroke="currentColor" stroke-width="2"><polygon points="3 11 22 2 13 21 11 13 3 11"></polygon></svg>
+                  ນຳທາງ (Navigate)
+                </span>
+              </a>
+            </div>
+          `;
+          infoWindowRef.current.setContent(content);
+          infoWindowRef.current.open(map, marker);
+        });
+
+        markersRef.current[c.id] = marker;
+      }
+    });
+
+    if (hasValidPoints && filteredCustomers.length > 0) {
+      map.fitBounds(bounds);
+      const listener = window.google.maps.event.addListenerOnce(
+        map,
+        "idle",
+        function () {
+          if (map.getZoom() > 16) {
+            map.setZoom(16);
+          }
+        },
+      );
+    }
+  }, [map, filteredCustomers]);
+
+  const handleLocateMe = () => {
+    if (navigator.geolocation && map && window.google && window.google.maps) {
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          const pos = {
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          };
+          setUserLocation(pos);
+          map.setCenter(pos);
+          map.setZoom(15);
+
+          if (userMarkerRef.current) userMarkerRef.current.setMap(null);
+
+          userMarkerRef.current = new window.google.maps.Marker({
+            position: pos,
+            map: map,
+            icon: {
+              path: window.google.maps.SymbolPath.CIRCLE,
+              scale: 8,
+              fillColor: "#3b82f6",
+              fillOpacity: 1,
+              strokeColor: "#ffffff",
+              strokeWeight: 2,
+            },
+            title: "ຕຳແໜ່ງຂອງທ່ານ",
+          });
+        },
+        () => alert("ບໍ່ສາມາດດຶງທີ່ຢູ່ປັດຈຸບັນໄດ້. ກະລຸນາເປີດ GPS."),
+      );
+    }
+  };
+
+  return (
+    <div className="w-full h-full relative">
+      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-[92%] max-w-[420px] z-20 flex gap-2">
+        <div className="bg-white rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.15)] flex-1 flex items-center p-3 border border-gray-100 relative">
+          <Search className="text-gray-400 mr-2" size={20} />
+          <input
+            type="text"
+            placeholder="ຄົ້ນຫາຊື່, ລະຫັດ ຫຼື ເບີໂທ..."
+            className="flex-1 outline-none text-sm font-medium"
+            value={search}
+            onChange={(e) => {
+              setSearch(e.target.value);
+              setShowDropdown(true);
+            }}
+            onFocus={() => setShowDropdown(true)}
+            onKeyDown={(e) => {
+              if (e.key === "Enter" && filteredCustomers.length > 0) {
+                focusOnCustomer(filteredCustomers[0]);
+              }
+            }}
+          />
+          {search && (
+            <button
+              onClick={() => {
+                setSearch("");
+                setShowDropdown(false);
+              }}
+            >
+              <X className="text-gray-400" size={18} />
+            </button>
+          )}
+        </div>
+        <button
+          onClick={onRefresh}
+          className="bg-white p-3 rounded-xl shadow-[0_2px_8px_rgba(0,0,0,0.15)] text-orange-500 hover:bg-orange-50"
+          title="ໂຫຼດຂໍ້ມູນໃໝ່"
+        >
+          <RefreshCw size={20} />
+        </button>
+
+        {showDropdown && search && filteredCustomers.length > 0 && (
+          <div className="absolute top-full mt-2 left-0 right-12 bg-white rounded-xl shadow-lg border border-gray-100 max-h-60 overflow-y-auto z-30">
+            {filteredCustomers.map((c, index) => (
+              <div
+                key={c.id || `dropdown-${index}`}
+                onClick={() => focusOnCustomer(c)}
+                className="p-3 border-b border-gray-50 last:border-0 hover:bg-orange-50 cursor-pointer flex justify-between items-center transition-colors"
+              >
+                <div>
+                  <div className="font-bold text-sm text-gray-800">
+                    {c.customerName}
+                  </div>
+                  <div className="text-xs text-gray-500">
+                    ບ.{c.village || "-"}, ມ.{c.district || "-"}
+                  </div>
+                </div>
+                <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-md">
+                  {c.customerCode}
+                </span>
+              </div>
+            ))}
+          </div>
+        )}
+      </div>
+
+      <div
+        ref={mapRef}
+        className="w-full h-full bg-gray-200"
+        onClick={() => setShowDropdown(false)}
+      />
+
+      <button
+        onClick={handleLocateMe}
+        className="absolute bottom-[30px] right-[10px] w-10 h-10 flex items-center justify-center bg-white rounded-sm shadow-[0_1px_4px_rgba(0,0,0,0.3)] text-gray-600 hover:text-orange-500 transition-colors z-10"
+        title="ສະແດງຕຳແໜ່ງປັດຈຸບັນ"
+      >
+        <LocateFixed size={22} strokeWidth={2.5} />
+      </button>
+    </div>
+  );
+}
+
+function ListView({
+  customers,
+  search,
+  setSearch,
+  onEdit,
+  onDelete,
+  onRefresh,
+}) {
+  const searchKeyword = String(search || "")
+    .toLowerCase()
+    .replace(/\s/g, "");
+  const filtered = customers.filter((c) => {
+    const name = String(c.customerName || "")
+      .toLowerCase()
+      .replace(/\s/g, "");
+    const code = String(c.customerCode || "")
+      .toLowerCase()
+      .replace(/\s/g, "");
+    const id = String(c.id || "")
+      .toLowerCase()
+      .replace(/\s/g, "");
+    const phone = String(c.phone || "")
+      .toLowerCase()
+      .replace(/\s/g, "");
+
+    return (
+      name.includes(searchKeyword) ||
+      code.includes(searchKeyword) ||
+      id.includes(searchKeyword) ||
+      phone.includes(searchKeyword)
+    );
+  });
+
+  return (
+    <div className="p-4 flex flex-col h-full max-w-4xl mx-auto">
+      <div className="flex gap-2 mb-4 flex-shrink-0">
+        <div className="bg-white rounded-xl shadow-sm flex-1 flex items-center p-3 border border-gray-200">
+          <Search className="text-gray-400 mr-2" size={20} />
+          <input
+            type="text"
+            placeholder="ຄົ້ນຫາຊື່, ລະຫັດ ຫຼື ເບີໂທ..."
+            className="flex-1 outline-none text-sm font-medium"
+            value={search}
+            onChange={(e) => setSearch(e.target.value)}
+          />
+        </div>
+        <button
+          onClick={onRefresh}
+          className="p-3 bg-white rounded-xl shadow-sm border border-gray-200 text-orange-500 hover:bg-orange-50"
+        >
+          <RefreshCw size={20} />
+        </button>
+      </div>
+
+      <div className="flex-1 overflow-y-auto space-y-3 pb-4 pr-1">
+        {filtered.length === 0 ? (
+          <div className="text-center text-gray-400 mt-10">
+            <MapPin size={48} className="mx-auto mb-2 opacity-20" />
+            <p>ບໍ່ພົບຂໍ້ມູນລູກຄ້າ</p>
+          </div>
+        ) : (
+          filtered.map((c, index) => (
+            <div
+              key={c.id || `list-${index}`}
+              className="bg-white p-4 rounded-xl shadow-sm border border-orange-100 flex justify-between items-start relative overflow-hidden hover:shadow-md transition"
+            >
+              <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500"></div>
+              <div className="flex-1 pl-2">
+                <div className="flex items-center gap-2 mb-1">
+                  <span className="text-xs font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-md">
+                    {c.customerCode}
+                  </span>
+                  <h3 className="font-bold text-gray-800">{c.customerName}</h3>
+                </div>
+                <div className="text-sm text-gray-500 space-y-1 mt-2">
+                  <p className="flex items-center gap-2">
+                    <Navigation size={14} className="text-gray-400" /> ບ.
+                    {c.village}, ມ.{c.district}, ຂ.{c.province}
+                  </p>
+                  <p className="flex items-center gap-2">
+                    <User size={14} className="text-gray-400" /> ຝ່າຍຂາຍ:{" "}
+                    {c.salesperson} ({c.salesPhone})
+                  </p>
+                </div>
+              </div>
+              <div className="flex flex-col gap-2">
+                <button
+                  onClick={() => onEdit(c)}
+                  className="p-2 text-blue-500 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
+                >
+                  <Edit size={16} />
+                </button>
+                <button
+                  onClick={() => onDelete(c.id)}
+                  className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition"
+                >
+                  <Trash2 size={16} />
+                </button>
+              </div>
+            </div>
+          ))
+        )}
+      </div>
+    </div>
+  );
+}
+
+function FormView({ initialData, user, onSave, onCancel, scriptLoaded }) {
+  const [showPicker, setShowPicker] = useState(false);
+  const [formData, setFormData] = useState({
+    id: "",
+    customerCode: "",
+    customerName: "",
+    channel: "",
+    phone: "",
+    village: "",
+    district: "",
+    province: "",
+    lat: "",
+    lng: "",
+    salesperson: "",
+    salesPhone: "",
+    creator: user?.name || "",
+  });
+
+  useEffect(() => {
+    if (initialData) setFormData(initialData);
+  }, [initialData]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    setFormData((prev) => ({ ...prev, [name]: value }));
+  };
+
+  const handleSubmit = (e) => {
+    e.preventDefault();
+    if (!formData.lat || !formData.lng) {
+      alert("ກະລຸນາເລືອກພິກັດສະຖານທີ່ຈາກແຜນທີ່");
+      return;
+    }
+    onSave(formData, !!initialData);
+  };
+
+  if (showPicker) {
+    return (
+      <LocationPicker
+        initialLat={formData.lat}
+        initialLng={formData.lng}
+        scriptLoaded={scriptLoaded}
+        onConfirm={(lat, lng) => {
+          setFormData((prev) => ({ ...prev, lat, lng }));
+          setShowPicker(false);
+        }}
+        onCancel={() => setShowPicker(false)}
+      />
+    );
+  }
+
+  return (
+    <div className="p-4 animate-in fade-in slide-in-from-bottom-4 duration-300 max-w-4xl mx-auto">
+      <div className="bg-white rounded-2xl shadow-sm border border-gray-100 p-5 mb-6">
+        <div className="flex justify-between items-center mb-4 border-b border-gray-100 pb-3">
+          <h2 className="text-lg font-bold text-gray-800 flex items-center gap-2">
+            <MapPin className="text-orange-500" size={20} />
+            {initialData ? "ແກ້ໄຂຂໍ້ມູນສະຖານທີ່" : "ເພີ່ມສະຖານທີ່ຮ້ານຄ້າໃໝ່"}
+          </h2>
+          {initialData && (
+            <button
+              onClick={onCancel}
+              className="p-1 hover:bg-gray-100 rounded-full text-gray-400 hover:text-gray-600 transition"
+            >
+              <X size={20} />
+            </button>
+          )}
+        </div>
+
+        <form onSubmit={handleSubmit} className="space-y-4">
+          <div className="grid grid-cols-2 gap-3">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                ລະຫັດລູກຄ້າ *
+              </label>
+              <input
+                required
+                name="customerCode"
+                value={formData.customerCode}
+                onChange={handleChange}
+                className="w-full border border-gray-300 bg-gray-50 rounded-lg p-2.5 outline-none focus:border-orange-500 focus:ring-1 focus:ring-orange-500 focus:bg-white transition text-sm"
+                placeholder="Cust-001"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                ຊ່ອງທາງ
+              </label>
+              <input
+                name="channel"
+                value={formData.channel}
+                onChange={handleChange}
+                className="w-full border border-gray-300 bg-gray-50 rounded-lg p-2.5 outline-none focus:border-orange-500 focus:bg-white transition text-sm"
+                placeholder="Facebook, ຮ້ານ..."
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              ຊື່ລູກຄ້າ / ຊື່ຮ້ານ *
+            </label>
+            <input
+              required
+              name="customerName"
+              value={formData.customerName}
+              onChange={handleChange}
+              className="w-full border border-gray-300 bg-gray-50 rounded-lg p-2.5 outline-none focus:border-orange-500 focus:bg-white transition text-sm"
+              placeholder="ປ້ອນຊື່ລູກຄ້າ"
+            />
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              ເບີໂທຕິດຕໍ່
+            </label>
+            <input
+              name="phone"
+              value={formData.phone}
+              onChange={handleChange}
+              className="w-full border border-gray-300 bg-gray-50 rounded-lg p-2.5 outline-none focus:border-orange-500 focus:bg-white transition text-sm"
+              placeholder="020 xxxx xxxx"
+            />
+          </div>
+
+          <div className="bg-orange-50 p-4 rounded-xl border border-orange-100 space-y-3 shadow-inner">
+            <h3 className="text-sm font-bold text-orange-800 flex items-center gap-2">
+              <MapPin size={16} /> ທີ່ຕັ້ງສະຖານທີ່
+            </h3>
+
+            <button
+              type="button"
+              onClick={() => setShowPicker(true)}
+              className="w-full bg-white border border-orange-300 text-orange-600 font-semibold py-2.5 rounded-lg shadow-sm flex items-center justify-center gap-2 hover:bg-orange-100 transition-colors"
+            >
+              <Crosshair size={18} />{" "}
+              {formData.lat ? "ປ່ຽນພິກັດໃໝ່" : "ເລືອກພິກັດຈາກແຜນທີ່ *"}
+            </button>
+
+            {formData.lat && (
+              <div className="text-xs text-center text-gray-600 bg-white py-1.5 rounded border border-orange-200 font-medium">
+                Lat: {Number(formData.lat).toFixed(5)}, Lng:{" "}
+                {Number(formData.lng).toFixed(5)}
+              </div>
+            )}
+
+            <div className="grid grid-cols-2 gap-3 mt-2">
+              <div>
+                <label className="block text-xs text-gray-600 mb-1 font-semibold">
+                  ບ້ານ
+                </label>
+                <input
+                  name="village"
+                  value={formData.village}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 bg-white rounded-lg p-2 text-sm outline-none focus:border-orange-500"
+                />
+              </div>
+              <div>
+                <label className="block text-xs text-gray-600 mb-1 font-semibold">
+                  ເມືອງ
+                </label>
+                <input
+                  name="district"
+                  value={formData.district}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 bg-white rounded-lg p-2 text-sm outline-none focus:border-orange-500"
+                />
+              </div>
+              <div className="col-span-2">
+                <label className="block text-xs text-gray-600 mb-1 font-semibold">
+                  ແຂວງ
+                </label>
+                <input
+                  name="province"
+                  value={formData.province}
+                  onChange={handleChange}
+                  className="w-full border border-gray-300 bg-white rounded-lg p-2 text-sm outline-none focus:border-orange-500"
+                />
+              </div>
+            </div>
+          </div>
+
+          <div className="grid grid-cols-2 gap-3 border-t border-gray-100 pt-4">
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                ພະນັກງານຂາຍ
+              </label>
+              <input
+                name="salesperson"
+                value={formData.salesperson}
+                onChange={handleChange}
+                className="w-full border border-gray-300 bg-gray-50 focus:bg-white rounded-lg p-2.5 text-sm outline-none focus:border-orange-500 transition"
+                placeholder="ຊື່ຜູ້ຮັບຜິດຊອບ"
+              />
+            </div>
+            <div>
+              <label className="block text-xs font-semibold text-gray-600 mb-1">
+                ເບີໂທພະນັກງານ
+              </label>
+              <input
+                name="salesPhone"
+                value={formData.salesPhone}
+                onChange={handleChange}
+                className="w-full border border-gray-300 bg-gray-50 focus:bg-white rounded-lg p-2.5 text-sm outline-none focus:border-orange-500 transition"
+                placeholder="020..."
+              />
+            </div>
+          </div>
+
+          <div>
+            <label className="block text-xs font-semibold text-gray-600 mb-1">
+              ຜູ້ສ້າງຂໍ້ມູນ (User)
+            </label>
+            <input
+              name="creator"
+              value={formData.creator}
+              disabled
+              className="w-full border border-gray-200 bg-gray-100 text-gray-500 rounded-lg p-2.5 text-sm outline-none cursor-not-allowed font-medium"
+              placeholder="ຊື່ແອັດມິນ"
+            />
+          </div>
+
+          <button
+            type="submit"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-orange-200 flex justify-center items-center gap-2 mt-4 transition-all active:scale-95"
+          >
+            <Save size={20} /> ບັນທຶກຂໍ້ມູນ
+          </button>
+        </form>
+      </div>
+    </div>
+  );
+}
+
+function LocationPicker({
+  initialLat,
+  initialLng,
+  onConfirm,
+  onCancel,
+  scriptLoaded,
+}) {
+  const mapRef = useRef(null);
+  const [map, setMap] = useState(null);
+
+  useEffect(() => {
+    if (
+      scriptLoaded &&
+      window.google &&
+      window.google.maps &&
+      mapRef.current &&
+      !map
+    ) {
+      const center = {
+        lat: parseFloat(initialLat) || 17.9757,
+        lng: parseFloat(initialLng) || 102.6331,
+      };
+      const m = new window.google.maps.Map(mapRef.current, {
+        center,
+        zoom: 16,
+        disableDefaultUI: false,
+        zoomControl: true,
+        zoomControlOptions: {
+          position: window.google.maps.ControlPosition.RIGHT_BOTTOM,
+        },
+        mapTypeControl: true,
+        mapTypeControlOptions: {
+          style: window.google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+          position: window.google.maps.ControlPosition.TOP_LEFT,
+        },
+        scaleControl: true,
+        streetViewControl: true,
+        streetViewControlOptions: {
+          position: window.google.maps.ControlPosition.RIGHT_BOTTOM,
+        },
+        fullscreenControl: true,
+        fullscreenControlOptions: {
+          position: window.google.maps.ControlPosition.TOP_RIGHT,
+        },
+      });
+      setMap(m);
+
+      if (!initialLat && navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition((pos) => {
+          m.setCenter({ lat: pos.coords.latitude, lng: pos.coords.longitude });
+        });
+      }
+    }
+  }, [scriptLoaded, mapRef, map, initialLat, initialLng]);
+
+  const handleConfirm = () => {
+    if (map) {
+      const center = map.getCenter();
+      onConfirm(center.lat(), center.lng());
+    }
+  };
+
+  return (
+    <div className="fixed inset-0 z-[60] flex flex-col bg-slate-50 animate-in slide-in-from-bottom-full duration-300 pb-[calc(env(safe-area-inset-bottom)+20px)]">
+      <div className="flex justify-between items-center p-4 bg-white shadow-sm z-10">
+        <button
+          onClick={onCancel}
+          className="p-2 -ml-2 text-gray-500 hover:text-gray-800 transition"
+        >
+          <ArrowLeft size={24} />
+        </button>
+        <h2 className="text-lg font-bold text-gray-800">
+          ເລື່ອນແຜນທີ່ເພື່ອປັກໝຸດ
+        </h2>
+        <div className="w-8"></div>
+      </div>
+
+      <div className="relative flex-1">
+        <div ref={mapRef} className="w-full h-full" />
+
+        <div className="absolute top-1/2 left-1/2 transform -translate-x-1/2 -translate-y-1/2 pointer-events-none drop-shadow-md pb-8">
+          <MapPin size={40} className="text-orange-600 fill-orange-500" />
+          <div className="w-3 h-1 bg-black/20 rounded-full mx-auto mt-1 blur-[1px]"></div>
+        </div>
+      </div>
+
+      <div className="p-4 bg-white border-t border-gray-100 shadow-[0_-4px_15px_rgba(0,0,0,0.05)]">
+        <button
+          className="w-full bg-orange-500 text-white py-3.5 rounded-xl font-bold text-lg shadow-lg shadow-orange-200 active:scale-95 transition-transform"
+          onClick={handleConfirm}
+        >
+          ຢືນຢັນພິກັດນີ້
+        </button>
+      </div>
+    </div>
   );
 }
 
@@ -1355,7 +2416,7 @@ function Dashboard({ logs, cars }) {
 
       <div className="bg-white p-4 md:p-8 rounded-xl md:rounded-2xl shadow-sm border border-gray-100">
         <h3 className="text-sm md:text-lg font-bold text-gray-800 mb-4 md:mb-6 font-lao flex items-center">
-          <BarChart3 className="w-4 h-4 md:w-5 md:h-5 mr-2 text-orange-500" />{" "}
+          <Activity className="w-4 h-4 md:w-5 md:h-5 mr-2 text-orange-500" />{" "}
           ກາຟຄ່ານ້ຳມັນລວມ ແລະ ປະລິມານນ້ຳມັນ (6 ເດືອນຫຼ້າສຸດ)
         </h3>
         <FuelChart
@@ -1851,7 +2912,6 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
             </div>
 
             <div className="grid grid-cols-2 gap-3 md:gap-5 pt-2 md:pt-3">
-              {/* ຊ່ອງອັບໂຫຼດ ຮູບບິນ */}
               <div className="border-2 border-dashed border-gray-300 rounded-xl md:rounded-2xl p-0 hover:border-orange-400 hover:bg-orange-50 transition relative overflow-hidden group h-28 md:h-40 flex flex-col justify-center items-center cursor-pointer bg-gray-50">
                 {formData.receiptUrl ? (
                   <div className="absolute inset-0 w-full h-full z-10">
@@ -1885,7 +2945,6 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
                 />
               </div>
 
-              {/* ຊ່ອງອັບໂຫຼດ ຮູບເລກກິໂລ */}
               <div className="border-2 border-dashed border-gray-300 rounded-xl md:rounded-2xl p-0 hover:border-orange-400 hover:bg-orange-50 transition relative overflow-hidden group h-28 md:h-40 flex flex-col justify-center items-center cursor-pointer bg-gray-50">
                 {formData.odometerUrl ? (
                   <div className="absolute inset-0 w-full h-full z-10">
@@ -1921,6 +2980,7 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
             </div>
           </div>
         </div>
+
         <div className="flex justify-end space-x-3 md:space-x-4 pt-6 md:pt-8 border-t border-gray-100">
           <button
             type="button"
@@ -1937,6 +2997,564 @@ function FuelForm({ onSave, onCancel, initialData, allLogs, cars }) {
           </button>
         </div>
       </form>
+    </div>
+  );
+}
+
+function FuelReport({ logs, cars, onRefresh }) {
+  const [startDate, setStartDate] = useState("");
+  const [endDate, setEndDate] = useState("");
+  const [selectedPlate, setSelectedPlate] = useState("");
+
+  const [sortConfig, setSortConfig] = useState({
+    key: "date",
+    direction: "desc",
+  });
+  const [expandedGroup, setExpandedGroup] = useState(null);
+
+  const filteredLogs = logs.filter((l) => {
+    const logDateStr = getLaosDateString(l.date);
+    const d = new Date(logDateStr);
+    const start = startDate ? new Date(startDate) : null;
+    const end = endDate ? new Date(endDate) : null;
+    let matchDate = true;
+    if (start && d < start) matchDate = false;
+    if (end && d > end) matchDate = false;
+
+    const matchPlate = selectedPlate ? l.licensePlate === selectedPlate : true;
+
+    return matchDate && matchPlate;
+  });
+
+  const chartData = useMemo(() => {
+    let isDayGrouping = false;
+    if (startDate && endDate) {
+      const start = new Date(startDate);
+      const end = new Date(endDate);
+      const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
+      if (diffDays <= 31) isDayGrouping = true;
+    } else if (startDate || endDate) {
+      isDayGrouping = true;
+    }
+
+    const grouped = {};
+    filteredLogs.forEach((log) => {
+      const localDateStr = getLaosDateString(log.date);
+      if (!localDateStr) return;
+
+      let key = localDateStr;
+      let label = formatDateDisplay(localDateStr).substring(0, 5);
+
+      if (!isDayGrouping) {
+        key = localDateStr.substring(0, 7);
+        const [y, m] = key.split("-");
+        label = `${m}/${y}`;
+      }
+
+      if (!grouped[key]) {
+        grouped[key] = {
+          key,
+          label,
+          liters: 0,
+          distance: 0,
+          validLiters: 0,
+          actualPaid: 0,
+          cars: {},
+        };
+      }
+      const l = Number(log.liters || 0);
+      const d = Number(log.distance || 0);
+      const p = Number(log.actualPaid || 0);
+      const plate = log.licensePlate || "ບໍ່ລະບຸ";
+
+      grouped[key].liters += l;
+      grouped[key].actualPaid += p;
+      if (d > 0) {
+        grouped[key].distance += d;
+        grouped[key].validLiters += l;
+      }
+
+      if (!grouped[key].cars[plate]) {
+        grouped[key].cars[plate] = { liters: 0, actualPaid: 0 };
+      }
+      grouped[key].cars[plate].liters += l;
+      grouped[key].cars[plate].actualPaid += p;
+    });
+
+    const sorted = Object.values(grouped).sort((a, b) =>
+      a.key.localeCompare(b.key),
+    );
+
+    return sorted.map((item) => {
+      const carDetailsArray = Object.keys(item.cars)
+        .map((plate) => ({
+          plate,
+          liters: item.cars[plate].liters,
+          actualPaid: item.cars[plate].actualPaid,
+        }))
+        .sort((a, b) => b.actualPaid - a.actualPaid);
+
+      return {
+        ...item,
+        carDetailsArray,
+        consumption:
+          item.validLiters > 0
+            ? Number((item.distance / item.validLiters).toFixed(2))
+            : 0,
+      };
+    });
+  }, [filteredLogs, startDate, endDate]);
+
+  const summary = {};
+  filteredLogs.forEach((log) => {
+    let rawDate = getLaosDateString(log.date);
+    const key = `${rawDate}_${log.licensePlate}`;
+
+    if (!summary[key]) {
+      summary[key] = {
+        date: rawDate,
+        plate: log.licensePlate,
+        count: 0,
+        liters: 0,
+        actualPaid: 0,
+        details: [],
+      };
+    }
+    summary[key].count += 1;
+    summary[key].liters += Number(log.liters || 0);
+    summary[key].actualPaid += Number(log.actualPaid || 0);
+    summary[key].details.push(log);
+  });
+
+  const reportData = useMemo(() => {
+    let rawData = Object.values(summary);
+
+    if (sortConfig.key !== null) {
+      rawData.sort((a, b) => {
+        let aValue = a[sortConfig.key];
+        let bValue = b[sortConfig.key];
+
+        if (["count", "liters", "actualPaid"].includes(sortConfig.key)) {
+          aValue = Number(aValue || 0);
+          bValue = Number(bValue || 0);
+        }
+
+        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
+        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
+        return 0;
+      });
+    } else {
+      rawData.sort((a, b) => new Date(b.date) - new Date(a.date));
+    }
+
+    return rawData;
+  }, [summary, sortConfig]);
+
+  const requestSort = (key) => {
+    let direction = "asc";
+    if (sortConfig.key === key && sortConfig.direction === "asc") {
+      direction = "desc";
+    }
+    setSortConfig({ key, direction });
+  };
+
+  const renderSortIcon = (columnKey) => {
+    if (sortConfig.key !== columnKey)
+      return (
+        <ArrowUpDown className="w-2 h-2 md:w-3 h-3 ml-1 inline-block text-gray-400 opacity-50" />
+      );
+    return sortConfig.direction === "asc" ? (
+      <ArrowUp className="w-2 h-2 md:w-3 h-3 ml-1 inline-block text-orange-500" />
+    ) : (
+      <ArrowDown className="w-2 h-2 md:w-3 h-3 ml-1 inline-block text-orange-500" />
+    );
+  };
+
+  const toggleGroup = (key) => {
+    if (expandedGroup === key) setExpandedGroup(null);
+    else setExpandedGroup(key);
+  };
+
+  const grandTotalLiters = reportData.reduce((sum, row) => sum + row.liters, 0);
+  const grandTotalCost = reportData.reduce(
+    (sum, row) => sum + row.actualPaid,
+    0,
+  );
+
+  let validDistance = 0;
+  let validLitersForAvg = 0;
+  filteredLogs.forEach((log) => {
+    const d = Number(log.distance || 0);
+    const l = Number(log.liters || 0);
+    if (d > 0) {
+      validDistance += d;
+      validLitersForAvg += l;
+    }
+  });
+  const averageConsumption =
+    validLitersForAvg > 0
+      ? (validDistance / validLitersForAvg).toFixed(2)
+      : "0.00";
+  const grandTotalCount = filteredLogs.length;
+
+  return (
+    <div className="space-y-4 md:space-y-6 animate-in slide-in-from-bottom-4 duration-300 mb-4">
+      <div className="bg-white p-4 md:p-8 rounded-xl md:rounded-2xl shadow-sm border border-gray-100">
+        <h3 className="text-base md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center space-x-2 md:space-x-3 border-b pb-3 md:pb-4">
+          <div className="flex items-center space-x-2 min-w-0 pr-2">
+            <div className="bg-orange-100 p-1.5 md:p-2 rounded-lg shrink-0">
+              <Activity className="text-orange-500 w-4 h-4 md:w-6 h-6" />
+            </div>
+            <span className="truncate">ລາຍງານການເຕີມນ້ຳມັນ</span>
+          </div>
+          <button
+            onClick={onRefresh}
+            className="p-1.5 md:p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition ml-auto shrink-0"
+            title="ໂຫຼດຂໍ້ມູນໃໝ່"
+          >
+            <RefreshCw className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+        </h3>
+
+        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
+          <div className="flex flex-col z-20 relative min-w-0 w-full">
+            <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
+              ຕັ້ງແຕ່ວັນທີ:
+            </label>
+            <div className="relative w-full min-w-0">
+              <input
+                type="date"
+                value={startDate}
+                onChange={(e) => setStartDate(e.target.value)}
+                className="block w-full min-w-full h-[40px] md:h-[48px] px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border appearance-none m-0"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col z-20 relative min-w-0 w-full">
+            <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
+              ເຖິງວັນທີ:
+            </label>
+            <div className="relative w-full min-w-0">
+              <input
+                type="date"
+                value={endDate}
+                onChange={(e) => setEndDate(e.target.value)}
+                className="block w-full min-w-full h-[40px] md:h-[48px] px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border appearance-none m-0"
+              />
+            </div>
+          </div>
+          <div className="flex flex-col z-20 relative min-w-0 w-full">
+            <SearchableSelect
+              label="ທະບຽນລົດ:"
+              placeholder="-- ທັງໝົດ --"
+              value={selectedPlate}
+              options={cars}
+              onChange={(val) => setSelectedPlate(val)}
+              showAllOption={true}
+              labelClassName="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2"
+            />
+          </div>
+          <div className="flex items-end z-10 relative">
+            <button
+              onClick={() => {
+                setStartDate("");
+                setEndDate("");
+                setSelectedPlate("");
+                setSortConfig({ key: "date", direction: "desc" });
+                setExpandedGroup(null);
+              }}
+              className="px-4 md:px-5 h-[40px] md:h-[48px] w-full text-xs md:text-sm text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg md:rounded-xl font-bold transition"
+            >
+              ລ້າງການຄົ້ນຫາ/ຈັດລຽງ
+            </button>
+          </div>
+        </div>
+
+        {/* Summary Cards */}
+        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-6">
+          <div className="bg-orange-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-orange-100 flex flex-col justify-center shadow-inner min-w-0">
+            <span className="text-orange-800 font-bold text-[10px] md:text-sm mb-0.5 md:mb-1 truncate">
+              ລວມຈຳນວນລິດ (ທີ່ກັ່ນຕອງ):
+            </span>
+            <span
+              className="text-lg md:text-2xl font-black text-orange-600 truncate"
+              title={`${formatNumber(grandTotalLiters)} ລິດ`}
+            >
+              {formatNumber(grandTotalLiters)}{" "}
+              <span className="text-xs md:text-sm font-bold">ລິດ</span>
+            </span>
+          </div>
+          <div className="bg-green-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-green-100 flex flex-col justify-center shadow-inner min-w-0">
+            <span className="text-green-800 font-bold text-[10px] md:text-sm mb-0.5 md:mb-1 truncate">
+              ລວມຄ່ານ້ຳມັນ (ທີ່ກັ່ນຕອງ):
+            </span>
+            <span
+              className="text-lg md:text-2xl font-black text-green-600 truncate"
+              title={`${formatInteger(grandTotalCost)} ກີບ`}
+            >
+              {formatInteger(grandTotalCost)}{" "}
+              <span className="text-xs md:text-sm font-bold">ກີບ</span>
+            </span>
+          </div>
+          <div className="bg-blue-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-blue-100 flex flex-col justify-center shadow-inner min-w-0">
+            <span className="text-blue-800 font-bold text-[10px] md:text-sm mb-0.5 md:mb-1 truncate">
+              ອັດຕາການສິ້ນເປືອງສະເລ່ຍ:
+            </span>
+            <span
+              className="text-lg md:text-2xl font-black text-blue-600 truncate"
+              title={`${formatNumber(averageConsumption)} ກມ./ລິດ`}
+            >
+              {formatNumber(averageConsumption)}{" "}
+              <span className="text-xs md:text-sm font-bold">ກມ./ລິດ</span>
+            </span>
+          </div>
+          <div className="bg-purple-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-purple-100 flex flex-col justify-center shadow-inner min-w-0">
+            <span className="text-purple-800 font-bold text-[10px] md:text-sm mb-0.5 md:mb-1 truncate">
+              ຈຳນວນຄັ້ງທີ່ເຕີມ (ທີ່ກັ່ນຕອງ):
+            </span>
+            <span
+              className="text-lg md:text-2xl font-black text-purple-600 truncate"
+              title={`${grandTotalCount} ຄັ້ງ`}
+            >
+              {grandTotalCount}{" "}
+              <span className="text-xs md:text-sm font-bold">ຄັ້ງ</span>
+            </span>
+          </div>
+        </div>
+
+        {/* ກາຟລາຍງານແບບໄດນາມິກ ຕາມເງື່ອນໄຂຄົ້ນຫາ */}
+        {filteredLogs.length > 0 && (
+          <div className="bg-gray-50/50 p-4 md:p-6 rounded-xl md:rounded-2xl border border-gray-100 mb-6 md:mb-8">
+            <h4 className="text-sm md:text-base font-bold text-gray-800 mb-4 font-lao flex items-center">
+              <Activity className="w-4 h-4 md:w-5 md:h-5 mr-2 text-orange-500" />{" "}
+              ກາຟສະແດງຄ່ານ້ຳມັນລວມ ແລະ ປະລິມານນ້ຳມັນ (ຕາມເງື່ອນໄຂຄົ້ນຫາ)
+            </h4>
+            <FuelChart
+              data={chartData}
+              barKey="actualPaid"
+              barName="ຄ່ານ້ຳມັນລວມ"
+              barUnit="ກີບ"
+              formatBar={formatInteger}
+              barColor="#fdba74"
+              barColorHover="#f97316"
+              barTextColor="#9a3412"
+              lineKey="liters"
+              lineName="ປະລິມານນ້ຳມັນ"
+              lineUnit="ລິດ"
+              formatLine={formatNumber}
+              lineColor="#3b82f6"
+              lineTextColor="#1e3a8a"
+            />
+          </div>
+        )}
+
+        {/* Data Table */}
+        <div className="overflow-x-auto border border-gray-100 rounded-xl">
+          <div className="overflow-auto max-h-[65vh]">
+            <table className="w-full text-left text-xs md:text-sm text-gray-600 whitespace-nowrap relative">
+              <thead className="bg-gray-50 text-gray-700 uppercase text-[10px] md:text-xs border-b border-gray-100 sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+                <tr>
+                  <th className="px-3 py-3 md:px-4 md:py-4 w-10 md:w-12 text-center text-gray-500 font-bold bg-gray-50">
+                    ລ/ດ
+                  </th>
+                  <th
+                    className="px-3 py-3 md:px-6 md:py-4 cursor-pointer hover:bg-gray-200 transition select-none font-bold bg-gray-50"
+                    onClick={() => requestSort("date")}
+                  >
+                    ວັນທີ {renderSortIcon("date")}
+                  </th>
+                  <th
+                    className="px-3 py-3 md:px-6 md:py-4 cursor-pointer hover:bg-gray-200 transition select-none font-bold bg-gray-50"
+                    onClick={() => requestSort("plate")}
+                  >
+                    ທະບຽນລົດ {renderSortIcon("plate")}
+                  </th>
+                  <th
+                    className="px-3 py-3 md:px-6 md:py-4 text-center cursor-pointer hover:bg-gray-200 transition select-none font-bold bg-gray-50"
+                    onClick={() => requestSort("count")}
+                  >
+                    ຈຳນວນຄັ້ງ {renderSortIcon("count")}
+                  </th>
+                  <th
+                    className="px-3 py-3 md:px-6 md:py-4 text-right cursor-pointer hover:bg-gray-200 transition select-none font-bold bg-gray-50"
+                    onClick={() => requestSort("liters")}
+                  >
+                    ລວມນ້ຳມັນ (ລິດ) {renderSortIcon("liters")}
+                  </th>
+                  <th
+                    className="px-3 py-3 md:px-6 md:py-4 text-right cursor-pointer hover:bg-gray-200 transition select-none font-bold bg-gray-50"
+                    onClick={() => requestSort("actualPaid")}
+                  >
+                    ລວມຄ່ານ້ຳມັນ (ກີບ) {renderSortIcon("actualPaid")}
+                  </th>
+                </tr>
+              </thead>
+              <tbody className="divide-y divide-gray-100">
+                {reportData.length > 0 ? (
+                  reportData.map((row, idx) => {
+                    const groupKey = row.date + "_" + row.plate;
+                    const isExpanded = expandedGroup === groupKey;
+                    return (
+                      <React.Fragment key={idx}>
+                        <tr
+                          className="hover:bg-orange-50/50 transition cursor-pointer"
+                          onClick={() => toggleGroup(groupKey)}
+                        >
+                          <td className="px-3 py-3 md:px-4 md:py-4 text-center text-gray-400 font-medium flex items-center justify-center space-x-1">
+                            <span>{idx + 1}</span>
+                            <ChevronDown
+                              className={`w-3 h-3 md:w-4 h-4 transition-transform duration-200 ${isExpanded ? "rotate-180 text-orange-500" : ""}`}
+                            />
+                          </td>
+                          <td className="px-3 py-3 md:px-6 md:py-4 font-medium">
+                            {formatDateDisplay(row.date)}
+                          </td>
+                          <td className="px-3 py-3 md:px-6 md:py-4 font-black text-gray-800">
+                            {row.plate}
+                          </td>
+                          <td className="px-3 py-3 md:px-6 md:py-4 text-center bg-gray-50/50 font-bold text-gray-700">
+                            {row.count}
+                          </td>
+                          <td className="px-3 py-3 md:px-6 md:py-4 text-right font-black text-orange-600">
+                            {formatNumber(row.liters)}
+                          </td>
+                          <td className="px-3 py-3 md:px-6 md:py-4 text-right font-black text-green-600">
+                            {formatInteger(row.actualPaid)}
+                          </td>
+                        </tr>
+
+                        {isExpanded && (
+                          <tr>
+                            <td
+                              colSpan="6"
+                              className="p-0 bg-gray-50 border-b border-gray-200"
+                            >
+                              <div className="p-2 pl-6 md:p-4 md:pl-12 shadow-inner bg-orange-50/30">
+                                <h4 className="text-xs md:text-sm font-bold text-gray-700 mb-2 md:mb-3 flex items-center space-x-1.5 md:space-x-2">
+                                  <List className="w-3 h-3 md:w-4 h-4 text-orange-500" />
+                                  <span>
+                                    ລາຍລະອຽດການເຕີມ (ວັນທີ:{" "}
+                                    {formatDateDisplay(row.date)})
+                                  </span>
+                                </h4>
+                                <div className="overflow-x-auto">
+                                  <table className="w-full text-left text-[10px] md:text-xs text-gray-600 whitespace-nowrap bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
+                                    <thead className="bg-gray-100 text-gray-600 border-b border-gray-200">
+                                      <tr>
+                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold text-center">
+                                          ຄັ້ງທີ
+                                        </th>
+                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold">
+                                          ຈຳນວນ (ລິດ)
+                                        </th>
+                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold">
+                                          ລາຄາ/ລິດ (ກີບ)
+                                        </th>
+                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold">
+                                          ຈ່າຍຈິງ (ກີບ)
+                                        </th>
+                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold">
+                                          ໄລຍະທາງ (ກມ)
+                                        </th>
+                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold">
+                                          ສິ້ນເປືອງ (ກມ/ລິດ)
+                                        </th>
+                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold text-center">
+                                          ຮູບພາບ
+                                        </th>
+                                      </tr>
+                                    </thead>
+                                    <tbody className="divide-y divide-gray-100">
+                                      {row.details.map((det, dIdx) => (
+                                        <tr
+                                          key={det.id || dIdx}
+                                          className="hover:bg-gray-50 transition"
+                                        >
+                                          <td className="px-2 py-2 md:px-4 md:py-2.5 text-center font-medium text-gray-500">
+                                            {dIdx + 1}
+                                          </td>
+                                          <td className="px-2 py-2 md:px-4 md:py-2.5 font-bold">
+                                            {formatNumber(det.liters)}
+                                          </td>
+                                          <td className="px-2 py-2 md:px-4 md:py-2.5">
+                                            {formatInteger(det.pricePerLiter)}
+                                          </td>
+                                          <td className="px-2 py-2 md:px-4 md:py-2.5 font-bold text-green-600">
+                                            {formatInteger(det.actualPaid)}
+                                          </td>
+                                          <td className="px-2 py-2 md:px-4 md:py-2.5">
+                                            {formatNumber(det.distance)}
+                                          </td>
+                                          <td className="px-2 py-2 md:px-4 md:py-2.5 text-blue-600 font-medium">
+                                            {formatNumber(det.consumption)}
+                                          </td>
+                                          <td className="px-2 py-2 md:px-4 md:py-2.5 flex justify-center space-x-1.5 md:space-x-2">
+                                            {det.receiptUrl &&
+                                            det.receiptUrl.startsWith(
+                                              "http",
+                                            ) ? (
+                                              <a
+                                                href={det.receiptUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="px-1.5 py-1 md:px-3 md:py-1 bg-orange-100 text-orange-600 font-bold rounded md:rounded-lg hover:bg-orange-200 transition flex items-center space-x-1"
+                                                title="ເບິ່ງຮູບບິນ"
+                                              >
+                                                <ExternalLink className="w-2.5 h-2.5 md:w-3 h-3" />{" "}
+                                                <span>ບິນ</span>
+                                              </a>
+                                            ) : (
+                                              <span className="text-gray-300 text-[10px] md:text-xs px-1.5 py-1 md:px-2 md:py-1">
+                                                -
+                                              </span>
+                                            )}
+                                            {det.odometerUrl &&
+                                            det.odometerUrl.startsWith(
+                                              "http",
+                                            ) ? (
+                                              <a
+                                                href={det.odometerUrl}
+                                                target="_blank"
+                                                rel="noopener noreferrer"
+                                                className="px-1.5 py-1 md:px-3 md:py-1 bg-blue-100 text-blue-600 font-bold rounded md:rounded-lg hover:bg-blue-200 transition flex items-center space-x-1"
+                                                title="ເບິ່ງຮູບເລກກິໂລ"
+                                              >
+                                                <ExternalLink className="w-2.5 h-2.5 md:w-3 h-3" />{" "}
+                                                <span>ກິໂລ</span>
+                                              </a>
+                                            ) : (
+                                              <span className="text-gray-300 text-[10px] md:text-xs px-1.5 py-1 md:px-2 md:py-1">
+                                                -
+                                              </span>
+                                            )}
+                                          </td>
+                                        </tr>
+                                      ))}
+                                    </tbody>
+                                  </table>
+                                </div>
+                              </div>
+                            </td>
+                          </tr>
+                        )}
+                      </React.Fragment>
+                    );
+                  })
+                ) : (
+                  <tr>
+                    <td
+                      colSpan="6"
+                      className="text-center py-12 md:py-16 text-gray-400 text-xs md:text-sm font-medium"
+                    >
+                      ບໍ່ມີຂໍ້ມູນລາຍງານໃນຊ່ວງເວລານີ້ (ຫຼື ທ່ານຍັງບໍ່ໄດ້ຮັບສິດ)
+                    </td>
+                  </tr>
+                )}
+              </tbody>
+            </table>
+          </div>
+        </div>
+      </div>
     </div>
   );
 }
@@ -2327,565 +3945,6 @@ function UserManagement({ users, allCars, onSave, onDelete }) {
               )}
             </tbody>
           </table>
-        </div>
-      </div>
-    </div>
-  );
-}
-
-function FuelReport({ logs, cars, onRefresh }) {
-  const [startDate, setStartDate] = useState("");
-  const [endDate, setEndDate] = useState("");
-  const [selectedPlate, setSelectedPlate] = useState("");
-
-  const [sortConfig, setSortConfig] = useState({
-    key: "date",
-    direction: "desc",
-  });
-  const [expandedGroup, setExpandedGroup] = useState(null);
-
-  const filteredLogs = logs.filter((l) => {
-    const logDateStr = getLaosDateString(l.date);
-    const d = new Date(logDateStr);
-    const start = startDate ? new Date(startDate) : null;
-    const end = endDate ? new Date(endDate) : null;
-    let matchDate = true;
-    if (start && d < start) matchDate = false;
-    if (end && d > end) matchDate = false;
-
-    const matchPlate = selectedPlate ? l.licensePlate === selectedPlate : true;
-
-    return matchDate && matchPlate;
-  });
-
-  const chartData = useMemo(() => {
-    let isDayGrouping = false;
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      const diffDays = Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24));
-      if (diffDays <= 31) isDayGrouping = true;
-    } else if (startDate || endDate) {
-      isDayGrouping = true;
-    }
-
-    const grouped = {};
-    filteredLogs.forEach((log) => {
-      const localDateStr = getLaosDateString(log.date);
-      if (!localDateStr) return;
-
-      let key = localDateStr;
-      let label = formatDateDisplay(localDateStr).substring(0, 5);
-
-      if (!isDayGrouping) {
-        key = localDateStr.substring(0, 7);
-        const [y, m] = key.split("-");
-        label = `${m}/${y}`;
-      }
-
-      if (!grouped[key]) {
-        grouped[key] = {
-          key,
-          label,
-          liters: 0,
-          distance: 0,
-          validLiters: 0,
-          actualPaid: 0,
-          cars: {},
-        };
-      }
-      const l = Number(log.liters || 0);
-      const d = Number(log.distance || 0);
-      const p = Number(log.actualPaid || 0);
-      const plate = log.licensePlate || "ບໍ່ລະບຸ";
-
-      grouped[key].liters += l;
-      grouped[key].actualPaid += p;
-      if (d > 0) {
-        grouped[key].distance += d;
-        grouped[key].validLiters += l;
-      }
-
-      if (!grouped[key].cars[plate]) {
-        grouped[key].cars[plate] = { liters: 0, actualPaid: 0 };
-      }
-      grouped[key].cars[plate].liters += l;
-      grouped[key].cars[plate].actualPaid += p;
-    });
-
-    const sorted = Object.values(grouped).sort((a, b) =>
-      a.key.localeCompare(b.key),
-    );
-
-    return sorted.map((item) => {
-      const carDetailsArray = Object.keys(item.cars)
-        .map((plate) => ({
-          plate,
-          liters: item.cars[plate].liters,
-          actualPaid: item.cars[plate].actualPaid,
-        }))
-        .sort((a, b) => b.actualPaid - a.actualPaid); // ລຽງຕາມຍອດເງິນຫຼາຍໄປໜ້ອຍ
-
-      return {
-        ...item,
-        carDetailsArray,
-        consumption:
-          item.validLiters > 0
-            ? Number((item.distance / item.validLiters).toFixed(2))
-            : 0,
-      };
-    });
-  }, [filteredLogs, startDate, endDate]);
-
-  const summary = {};
-  filteredLogs.forEach((log) => {
-    let rawDate = getLaosDateString(log.date);
-    const key = `${rawDate}_${log.licensePlate}`;
-
-    if (!summary[key]) {
-      summary[key] = {
-        date: rawDate,
-        plate: log.licensePlate,
-        count: 0,
-        liters: 0,
-        actualPaid: 0,
-        details: [],
-      };
-    }
-    summary[key].count += 1;
-    summary[key].liters += Number(log.liters || 0);
-    summary[key].actualPaid += Number(log.actualPaid || 0);
-    summary[key].details.push(log);
-  });
-
-  const reportData = useMemo(() => {
-    let rawData = Object.values(summary);
-
-    if (sortConfig.key !== null) {
-      rawData.sort((a, b) => {
-        let aValue = a[sortConfig.key];
-        let bValue = b[sortConfig.key];
-
-        if (["count", "liters", "actualPaid"].includes(sortConfig.key)) {
-          aValue = Number(aValue || 0);
-          bValue = Number(bValue || 0);
-        }
-
-        if (aValue < bValue) return sortConfig.direction === "asc" ? -1 : 1;
-        if (aValue > bValue) return sortConfig.direction === "asc" ? 1 : -1;
-        return 0;
-      });
-    } else {
-      rawData.sort((a, b) => new Date(b.date) - new Date(a.date));
-    }
-
-    return rawData;
-  }, [summary, sortConfig]);
-
-  const requestSort = (key) => {
-    let direction = "asc";
-    if (sortConfig.key === key && sortConfig.direction === "asc") {
-      direction = "desc";
-    }
-    setSortConfig({ key, direction });
-  };
-
-  const renderSortIcon = (columnKey) => {
-    if (sortConfig.key !== columnKey)
-      return (
-        <ArrowUpDown className="w-2 h-2 md:w-3 h-3 ml-1 inline-block text-gray-400 opacity-50" />
-      );
-    return sortConfig.direction === "asc" ? (
-      <ArrowUp className="w-2 h-2 md:w-3 h-3 ml-1 inline-block text-orange-500" />
-    ) : (
-      <ArrowDown className="w-2 h-2 md:w-3 h-3 ml-1 inline-block text-orange-500" />
-    );
-  };
-
-  const toggleGroup = (key) => {
-    if (expandedGroup === key) setExpandedGroup(null);
-    else setExpandedGroup(key);
-  };
-
-  const grandTotalLiters = reportData.reduce((sum, row) => sum + row.liters, 0);
-  const grandTotalCost = reportData.reduce(
-    (sum, row) => sum + row.actualPaid,
-    0,
-  );
-
-  let validDistance = 0;
-  let validLitersForAvg = 0;
-  filteredLogs.forEach((log) => {
-    const d = Number(log.distance || 0);
-    const l = Number(log.liters || 0);
-    if (d > 0) {
-      validDistance += d;
-      validLitersForAvg += l;
-    }
-  });
-  const averageConsumption =
-    validLitersForAvg > 0
-      ? (validDistance / validLitersForAvg).toFixed(2)
-      : "0.00";
-  const grandTotalCount = filteredLogs.length;
-
-  return (
-    <div className="space-y-4 md:space-y-6 animate-in slide-in-from-bottom-4 duration-300 mb-4">
-      <div className="bg-white p-4 md:p-8 rounded-xl md:rounded-2xl shadow-sm border border-gray-100">
-        <h3 className="text-base md:text-xl font-bold text-gray-800 mb-4 md:mb-6 flex items-center space-x-2 md:space-x-3 border-b pb-3 md:pb-4">
-          <div className="flex items-center space-x-2 min-w-0 pr-2">
-            <div className="bg-orange-100 p-1.5 md:p-2 rounded-lg shrink-0">
-              <BarChart3 className="text-orange-500 w-4 h-4 md:w-6 h-6" />
-            </div>
-            <span className="truncate">ລາຍງານການເຕີມນ້ຳມັນ</span>
-          </div>
-          {/* ປຸ່ມ Refresh (ດຶງຂໍ້ມູນໃໝ່) */}
-          <button
-            onClick={onRefresh}
-            className="p-1.5 md:p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition ml-auto shrink-0"
-            title="ໂຫຼດຂໍ້ມູນໃໝ່"
-          >
-            <RefreshCw className="w-4 h-4 md:w-5 md:h-5" />
-          </button>
-        </h3>
-
-        <div className="grid grid-cols-1 md:grid-cols-4 gap-3 md:gap-5 mb-6 md:mb-8">
-          <div className="flex flex-col z-20 relative min-w-0 w-full">
-            <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
-              ຕັ້ງແຕ່ວັນທີ:
-            </label>
-            <div className="relative w-full min-w-0">
-              <input
-                type="date"
-                value={startDate}
-                onChange={(e) => setStartDate(e.target.value)}
-                className="block w-full min-w-full h-[40px] md:h-[48px] px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border appearance-none m-0"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col z-20 relative min-w-0 w-full">
-            <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
-              ເຖິງວັນທີ:
-            </label>
-            <div className="relative w-full min-w-0">
-              <input
-                type="date"
-                value={endDate}
-                onChange={(e) => setEndDate(e.target.value)}
-                className="block w-full min-w-full h-[40px] md:h-[48px] px-3 md:px-4 py-2 md:py-2.5 border border-gray-300 rounded-lg md:rounded-xl outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 focus:bg-white transition box-border appearance-none m-0"
-              />
-            </div>
-          </div>
-          <div className="flex flex-col z-20 relative min-w-0 w-full">
-            <SearchableSelect
-              label="ທະບຽນລົດ:"
-              placeholder="-- ທັງໝົດ --"
-              value={selectedPlate}
-              options={cars}
-              onChange={(val) => setSelectedPlate(val)}
-              showAllOption={true}
-              labelClassName="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2"
-            />
-          </div>
-          <div className="flex items-end z-10 relative">
-            <button
-              onClick={() => {
-                setStartDate("");
-                setEndDate("");
-                setSelectedPlate("");
-                setSortConfig({ key: "date", direction: "desc" });
-                setExpandedGroup(null);
-              }}
-              className="px-4 md:px-5 h-[40px] md:h-[48px] w-full text-xs md:text-sm text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg md:rounded-xl font-bold transition"
-            >
-              ລ້າງການຄົ້ນຫາ/ຈັດລຽງ
-            </button>
-          </div>
-        </div>
-
-        {/* Summary Cards */}
-        <div className="grid grid-cols-1 sm:grid-cols-2 gap-3 md:gap-6 mb-4 md:mb-6">
-          <div className="bg-orange-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-orange-100 flex flex-col justify-center shadow-inner min-w-0">
-            <span className="text-orange-800 font-bold text-[10px] md:text-sm mb-0.5 md:mb-1 truncate">
-              ລວມຈຳນວນລິດ (ທີ່ກັ່ນຕອງ):
-            </span>
-            <span
-              className="text-lg md:text-2xl font-black text-orange-600 truncate"
-              title={`${formatNumber(grandTotalLiters)} ລິດ`}
-            >
-              {formatNumber(grandTotalLiters)}{" "}
-              <span className="text-xs md:text-sm font-bold">ລິດ</span>
-            </span>
-          </div>
-          <div className="bg-green-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-green-100 flex flex-col justify-center shadow-inner min-w-0">
-            <span className="text-green-800 font-bold text-[10px] md:text-sm mb-0.5 md:mb-1 truncate">
-              ລວມຄ່ານ້ຳມັນ (ທີ່ກັ່ນຕອງ):
-            </span>
-            <span
-              className="text-lg md:text-2xl font-black text-green-600 truncate"
-              title={`${formatInteger(grandTotalCost)} ກີບ`}
-            >
-              {formatInteger(grandTotalCost)}{" "}
-              <span className="text-xs md:text-sm font-bold">ກີບ</span>
-            </span>
-          </div>
-          <div className="bg-blue-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-blue-100 flex flex-col justify-center shadow-inner min-w-0">
-            <span className="text-blue-800 font-bold text-[10px] md:text-sm mb-0.5 md:mb-1 truncate">
-              ອັດຕາການສິ້ນເປືອງສະເລ່ຍ:
-            </span>
-            <span
-              className="text-lg md:text-2xl font-black text-blue-600 truncate"
-              title={`${formatNumber(averageConsumption)} ກມ./ລິດ`}
-            >
-              {formatNumber(averageConsumption)}{" "}
-              <span className="text-xs md:text-sm font-bold">ກມ./ລິດ</span>
-            </span>
-          </div>
-          <div className="bg-purple-50 p-4 md:p-5 rounded-xl md:rounded-2xl border border-purple-100 flex flex-col justify-center shadow-inner min-w-0">
-            <span className="text-purple-800 font-bold text-[10px] md:text-sm mb-0.5 md:mb-1 truncate">
-              ຈຳນວນຄັ້ງທີ່ເຕີມ (ທີ່ກັ່ນຕອງ):
-            </span>
-            <span
-              className="text-lg md:text-2xl font-black text-purple-600 truncate"
-              title={`${grandTotalCount} ຄັ້ງ`}
-            >
-              {grandTotalCount}{" "}
-              <span className="text-xs md:text-sm font-bold">ຄັ້ງ</span>
-            </span>
-          </div>
-        </div>
-
-        {/* ກາຟລາຍງານແບບໄດນາມິກ ຕາມເງື່ອນໄຂຄົ້ນຫາ */}
-        {filteredLogs.length > 0 && (
-          <div className="bg-gray-50/50 p-4 md:p-6 rounded-xl md:rounded-2xl border border-gray-100 mb-6 md:mb-8">
-            <h4 className="text-sm md:text-base font-bold text-gray-800 mb-4 font-lao flex items-center">
-              <BarChart3 className="w-4 h-4 md:w-5 md:h-5 mr-2 text-orange-500" />{" "}
-              ກາຟສະແດງຄ່ານ້ຳມັນລວມ ແລະ ປະລິມານນ້ຳມັນ (ຕາມເງື່ອນໄຂຄົ້ນຫາ)
-            </h4>
-            <FuelChart
-              data={chartData}
-              barKey="actualPaid"
-              barName="ຄ່ານ້ຳມັນລວມ"
-              barUnit="ກີບ"
-              formatBar={formatInteger}
-              barColor="#fdba74"
-              barColorHover="#f97316"
-              barTextColor="#9a3412"
-              lineKey="liters"
-              lineName="ປະລິມານນ້ຳມັນ"
-              lineUnit="ລິດ"
-              formatLine={formatNumber}
-              lineColor="#3b82f6"
-              lineTextColor="#1e3a8a"
-            />
-          </div>
-        )}
-
-        {/* Data Table */}
-        <div className="overflow-x-auto border border-gray-100 rounded-xl">
-          <div className="overflow-auto max-h-[65vh]">
-            <table className="w-full text-left text-xs md:text-sm text-gray-600 whitespace-nowrap relative">
-              <thead className="bg-gray-50 text-gray-700 uppercase text-[10px] md:text-xs border-b border-gray-100 sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
-                <tr>
-                  <th className="px-3 py-3 md:px-4 md:py-4 w-10 md:w-12 text-center text-gray-500 font-bold bg-gray-50">
-                    ລ/ດ
-                  </th>
-                  <th
-                    className="px-3 py-3 md:px-6 md:py-4 cursor-pointer hover:bg-gray-200 transition select-none font-bold bg-gray-50"
-                    onClick={() => requestSort("date")}
-                  >
-                    ວັນທີ {renderSortIcon("date")}
-                  </th>
-                  <th
-                    className="px-3 py-3 md:px-6 md:py-4 cursor-pointer hover:bg-gray-200 transition select-none font-bold bg-gray-50"
-                    onClick={() => requestSort("plate")}
-                  >
-                    ທະບຽນລົດ {renderSortIcon("plate")}
-                  </th>
-                  <th
-                    className="px-3 py-3 md:px-6 md:py-4 text-center cursor-pointer hover:bg-gray-200 transition select-none font-bold bg-gray-50"
-                    onClick={() => requestSort("count")}
-                  >
-                    ຈຳນວນຄັ້ງ {renderSortIcon("count")}
-                  </th>
-                  <th
-                    className="px-3 py-3 md:px-6 md:py-4 text-right cursor-pointer hover:bg-gray-200 transition select-none font-bold bg-gray-50"
-                    onClick={() => requestSort("liters")}
-                  >
-                    ລວມນ້ຳມັນ (ລິດ) {renderSortIcon("liters")}
-                  </th>
-                  <th
-                    className="px-3 py-3 md:px-6 md:py-4 text-right cursor-pointer hover:bg-gray-200 transition select-none font-bold bg-gray-50"
-                    onClick={() => requestSort("actualPaid")}
-                  >
-                    ລວມຄ່ານ້ຳມັນ (ກີບ) {renderSortIcon("actualPaid")}
-                  </th>
-                </tr>
-              </thead>
-              <tbody className="divide-y divide-gray-100">
-                {reportData.length > 0 ? (
-                  reportData.map((row, idx) => {
-                    const groupKey = row.date + "_" + row.plate;
-                    const isExpanded = expandedGroup === groupKey;
-                    return (
-                      <React.Fragment key={idx}>
-                        <tr
-                          className="hover:bg-orange-50/50 transition cursor-pointer"
-                          onClick={() => toggleGroup(groupKey)}
-                        >
-                          <td className="px-3 py-3 md:px-4 md:py-4 text-center text-gray-400 font-medium flex items-center justify-center space-x-1">
-                            <span>{idx + 1}</span>
-                            <ChevronDown
-                              className={`w-3 h-3 md:w-4 h-4 transition-transform duration-200 ${isExpanded ? "rotate-180 text-orange-500" : ""}`}
-                            />
-                          </td>
-                          <td className="px-3 py-3 md:px-6 md:py-4 font-medium">
-                            {formatDateDisplay(row.date)}
-                          </td>
-                          <td className="px-3 py-3 md:px-6 md:py-4 font-black text-gray-800">
-                            {row.plate}
-                          </td>
-                          <td className="px-3 py-3 md:px-6 md:py-4 text-center bg-gray-50/50 font-bold text-gray-700">
-                            {row.count}
-                          </td>
-                          <td className="px-3 py-3 md:px-6 md:py-4 text-right font-black text-orange-600">
-                            {formatNumber(row.liters)}
-                          </td>
-                          <td className="px-3 py-3 md:px-6 md:py-4 text-right font-black text-green-600">
-                            {formatInteger(row.actualPaid)}
-                          </td>
-                        </tr>
-
-                        {isExpanded && (
-                          <tr>
-                            <td
-                              colSpan="6"
-                              className="p-0 bg-gray-50 border-b border-gray-200"
-                            >
-                              <div className="p-2 pl-6 md:p-4 md:pl-12 shadow-inner bg-orange-50/30">
-                                <h4 className="text-xs md:text-sm font-bold text-gray-700 mb-2 md:mb-3 flex items-center space-x-1.5 md:space-x-2">
-                                  <List className="w-3 h-3 md:w-4 h-4 text-orange-500" />
-                                  <span>
-                                    ລາຍລະອຽດການເຕີມ (ວັນທີ:{" "}
-                                    {formatDateDisplay(row.date)})
-                                  </span>
-                                </h4>
-                                <div className="overflow-x-auto">
-                                  <table className="w-full text-left text-[10px] md:text-xs text-gray-600 whitespace-nowrap bg-white rounded-lg shadow-sm border border-gray-200 overflow-hidden">
-                                    <thead className="bg-gray-100 text-gray-600 border-b border-gray-200">
-                                      <tr>
-                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold text-center">
-                                          ຄັ້ງທີ
-                                        </th>
-                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold">
-                                          ຈຳນວນ (ລິດ)
-                                        </th>
-                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold">
-                                          ລາຄາ/ລິດ (ກີບ)
-                                        </th>
-                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold">
-                                          ຈ່າຍຈິງ (ກີບ)
-                                        </th>
-                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold">
-                                          ໄລຍະທາງ (ກມ)
-                                        </th>
-                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold">
-                                          ສິ້ນເປືອງ (ກມ/ລິດ)
-                                        </th>
-                                        <th className="px-2 py-2 md:px-4 md:py-3 font-bold text-center">
-                                          ຮູບພາບ
-                                        </th>
-                                      </tr>
-                                    </thead>
-                                    <tbody className="divide-y divide-gray-100">
-                                      {row.details.map((det, dIdx) => (
-                                        <tr
-                                          key={det.id || dIdx}
-                                          className="hover:bg-gray-50 transition"
-                                        >
-                                          <td className="px-2 py-2 md:px-4 md:py-2.5 text-center font-medium text-gray-500">
-                                            {dIdx + 1}
-                                          </td>
-                                          <td className="px-2 py-2 md:px-4 md:py-2.5 font-bold">
-                                            {formatNumber(det.liters)}
-                                          </td>
-                                          <td className="px-2 py-2 md:px-4 md:py-2.5">
-                                            {formatInteger(det.pricePerLiter)}
-                                          </td>
-                                          <td className="px-2 py-2 md:px-4 md:py-2.5 font-bold text-green-600">
-                                            {formatInteger(det.actualPaid)}
-                                          </td>
-                                          <td className="px-2 py-2 md:px-4 md:py-2.5">
-                                            {formatNumber(det.distance)}
-                                          </td>
-                                          <td className="px-2 py-2 md:px-4 md:py-2.5 text-blue-600 font-medium">
-                                            {formatNumber(det.consumption)}
-                                          </td>
-                                          <td className="px-2 py-2 md:px-4 md:py-2.5 flex justify-center space-x-1.5 md:space-x-2">
-                                            {det.receiptUrl &&
-                                            det.receiptUrl.startsWith(
-                                              "http",
-                                            ) ? (
-                                              <a
-                                                href={det.receiptUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="px-1.5 py-1 md:px-3 md:py-1 bg-orange-100 text-orange-600 font-bold rounded md:rounded-lg hover:bg-orange-200 transition flex items-center space-x-1"
-                                                title="ເບິ່ງຮູບບິນ"
-                                              >
-                                                <ExternalLink className="w-2.5 h-2.5 md:w-3 h-3" />{" "}
-                                                <span>ບິນ</span>
-                                              </a>
-                                            ) : (
-                                              <span className="text-gray-300 text-[10px] md:text-xs px-1.5 py-1 md:px-2 md:py-1">
-                                                -
-                                              </span>
-                                            )}
-                                            {det.odometerUrl &&
-                                            det.odometerUrl.startsWith(
-                                              "http",
-                                            ) ? (
-                                              <a
-                                                href={det.odometerUrl}
-                                                target="_blank"
-                                                rel="noopener noreferrer"
-                                                className="px-1.5 py-1 md:px-3 md:py-1 bg-blue-100 text-blue-600 font-bold rounded md:rounded-lg hover:bg-blue-200 transition flex items-center space-x-1"
-                                                title="ເບິ່ງຮູບເລກກິໂລ"
-                                              >
-                                                <ExternalLink className="w-2.5 h-2.5 md:w-3 h-3" />{" "}
-                                                <span>ກິໂລ</span>
-                                              </a>
-                                            ) : (
-                                              <span className="text-gray-300 text-[10px] md:text-xs px-1.5 py-1 md:px-2 md:py-1">
-                                                -
-                                              </span>
-                                            )}
-                                          </td>
-                                        </tr>
-                                      ))}
-                                    </tbody>
-                                  </table>
-                                </div>
-                              </div>
-                            </td>
-                          </tr>
-                        )}
-                      </React.Fragment>
-                    );
-                  })
-                ) : (
-                  <tr>
-                    <td
-                      colSpan="6"
-                      className="text-center py-12 md:py-16 text-gray-400 text-xs md:text-sm font-medium"
-                    >
-                      ບໍ່ມີຂໍ້ມູນລາຍງານໃນຊ່ວງເວລານີ້ (ຫຼື ທ່ານຍັງບໍ່ໄດ້ຮັບສິດ)
-                    </td>
-                  </tr>
-                )}
-              </tbody>
-            </table>
-          </div>
         </div>
       </div>
     </div>
