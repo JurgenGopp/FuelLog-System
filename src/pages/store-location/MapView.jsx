@@ -181,7 +181,7 @@ export default function MapView() {
           const content = `
             <div style="width: auto; max-width: 300px; font-family: 'Noto Sans Lao', sans-serif;">
               <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; overflow-wrap: break-word;">${c.customerName}</h3>
-              <div style="font-size: 13px; color: #475569; margin-bottom: 8px; line-height: 1.5;">
+              <div style="font-size: 16px; color: #475569; margin-bottom: 8px; line-height: 1.5;">
                 <p style="margin: 2px 0;"><b>ລະຫັດ:</b> ${c.customerCode}</p>
                 <p style="margin: 2px 0;"><b>ເບີໂທ:</b> ${c.phone}</p>
                 <p style="margin: 2px 0;"><b>ສະຖານທີ່:</b> ບ.${c.village}, ມ.${c.district}, ຂ.${c.province}</p>

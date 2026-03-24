@@ -1,7 +1,7 @@
 // src/components/common/Footer.jsx
 import React from "react";
 
-import LOGO_URL from "../../assets/Logo_P&P.jpg"; // ປັບ Path ໃຫ້ເຂົ້າກັບໂຄງສ້າງໃໝ່ (ເກັບຮູບໄວ້ໃນ folder public/assets)
+import LOGO_URL from "/Logo_P&P.jpg"; // ປັບ Path ໃຫ້ເຂົ້າກັບໂຄງສ້າງໃໝ່ (ເກັບຮູບໄວ້ໃນ folder public/assets)
 
 export default function Footer() {
   const currentYear = new Date().getFullYear();

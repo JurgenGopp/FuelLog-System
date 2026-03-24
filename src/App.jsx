@@ -14,16 +14,12 @@ import FuelList from "./pages/FuelList";
 import FuelFormPage from "./pages/FuelFormPage";
 import FuelReport from "./pages/FuelReport";
 import UserManagement from "./pages/UserManagement";
-
-// ໂຫຼດ Pages (ສະຖານທີ່ຮ້ານຄ້າ)
 import MapView from "./pages/store-location/MapView";
 import ListView from "./pages/store-location/ListView";
 import FormView from "./pages/store-location/FormView";
 
 /**
  * Component ສຳລັບປ້ອງກັນ Route
- * - ຖ້າຍັງບໍ່ Login ໃຫ້ເຕະໄປໜ້າ /login
- * - ຖ້າ Login ແລ້ວແຕ່ບໍ່ມີສິດເຂົ້າໜ້ານັ້ນ ໃຫ້ເຕະໄປໜ້າ /dashboard
  */
 const ProtectedRoute = ({ children, requiredMenu }) => {
   const { user, hasAccess } = useAuth();
@@ -34,10 +30,31 @@ const ProtectedRoute = ({ children, requiredMenu }) => {
 
   if (requiredMenu && !hasAccess(requiredMenu)) {
     alert("ທ່ານບໍ່ມີສິດເຂົ້າເຖິງໜ້ານີ້");
-    return <Navigate to="/dashboard" replace />;
+    // --- ແກ້ໄຂ: ຖ້າເປັນ Driver ໃຫ້ເຕະກັບໄປໜ້າ Form, ຖ້າເປັນສື່ອື່ນເຕະໄປ Dashboard ---
+    return (
+      <Navigate
+        to={user.role === "driver" ? "/fuel/add" : "/dashboard"}
+        replace
+      />
+    );
   }
 
   return children;
+};
+
+/**
+ * Component ສຳລັບການຈັດການໜ້າທຳອິດ (ເວລາມີຄົນເຂົ້າເວັບໂດຍບໍ່ລະບຸ Path /)
+ */
+const RootRedirect = () => {
+  const { user } = useAuth();
+  if (!user) return <Navigate to="/login" replace />;
+  // ຖ້າເປັນ Driver ໃຫ້ໄປໜ້າ /fuel/add, ຖ້າບໍ່ແມ່ນໄປໜ້າ /dashboard
+  return (
+    <Navigate
+      to={user.role === "driver" ? "/fuel/add" : "/dashboard"}
+      replace
+    />
+  );
 };
 
 export default function App() {
@@ -45,12 +62,10 @@ export default function App() {
     <AuthProvider>
       <BrowserRouter>
         <Routes>
-          {/* --- ເສັ້ນທາງສຳລັບໜ້າທີ່ບໍ່ຕອ້ງ Login (Auth Layout) --- */}
           <Route element={<AuthLayout />}>
             <Route path="/login" element={<Login />} />
           </Route>
 
-          {/* --- ເສັ້ນທາງສຳລັບລະບົບຫຼັງບ້ານ (Main Layout) --- */}
           <Route
             element={
               <ProtectedRoute>
@@ -58,8 +73,8 @@ export default function App() {
               </ProtectedRoute>
             }
           >
-            {/* ເມື່ອເຂົ້າໜ້າເວັບຫຼັກ / ໃຫ້ Redirect ໄປຫາ Dashboard */}
-            <Route path="/" element={<Navigate to="/dashboard" replace />} />
+            {/* --- ແກ້ໄຂ: ໃຊ້ RootRedirect ແທນການ Redirect ໄປ Dashboard ຕາຍຕົວ --- */}
+            <Route path="/" element={<RootRedirect />} />
 
             <Route
               path="/dashboard"
@@ -112,7 +127,6 @@ export default function App() {
               }
             />
 
-            {/* --- ກຸ່ມສະຖານທີ່ຮ້ານຄ້າ --- */}
             <Route
               path="/location/map"
               element={
@@ -146,8 +160,8 @@ export default function App() {
               }
             />
 
-            {/* ຖ້າພິມ URL ມົ້ວ ໃຫ້ກັບໄປໜ້າ Dashboard */}
-            <Route path="*" element={<Navigate to="/dashboard" replace />} />
+            {/* ຖ້າພິມ URL ມົ້ວ ໃຫ້ໃຊ້ RootRedirect */}
+            <Route path="*" element={<RootRedirect />} />
           </Route>
         </Routes>
       </BrowserRouter>

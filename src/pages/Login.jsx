@@ -4,7 +4,7 @@ import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { callApi } from "../api/config";
 
-import LOGO_URL from "../assets/Logo_P&P.jpg";
+import LOGO_URL from "/Logo_P&P.jpg";
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
@@ -24,7 +24,13 @@ export default function Login() {
 
     if (res.success && res.user) {
       login(res.user);
-      navigate("/dashboard"); // ໄປໜ້າ Dashboard ຫຼັງຈາກ Login ສຳເລັດ
+
+      // --- ແກ້ໄຂ: ກວດສອບ Role ກ່ອນ Redirect ---
+      if (res.user.role === "driver") {
+        navigate("/fuel/add"); // ຖ້າເປັນ Driver ໃຫ້ໄປໜ້າບັນທຶກເຕີມນ້ຳມັນ
+      } else {
+        navigate("/dashboard"); // ຖ້າເປັນ Admin, User ໃຫ້ໄປໜ້າ Dashboard
+      }
     } else {
       setError(res.message || "ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ");
     }
@@ -49,12 +55,12 @@ export default function Login() {
       </h2>
 
       {error && (
-        <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded">
+        <div className="mb-4 p-3 bg-red-50 border-l-4 border-red-500 text-red-700 text-sm rounded font-lao">
           {error}
         </div>
       )}
 
-      <form onSubmit={handleLogin} className="space-y-4 md:space-y-5">
+      <form onSubmit={handleLogin} className="space-y-4 md:space-y-5 font-lao">
         <div>
           <label className="block text-xs md:text-sm font-medium text-gray-700 mb-1">
             ຊື່ຜູ້ໃຊ້
