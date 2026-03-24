@@ -9,7 +9,6 @@ export default function MainLayout() {
   const [sidebarOpen, setSidebarOpen] = useState(false);
   const location = useLocation();
 
-  // ຖ້າຢູ່ໜ້າແຜນທີ່ ຈະບໍ່ຕ້ອງສະແດງ padding ຫຼາຍ ແລະ ບໍ່ສະແດງ Footer
   const isMapPage = location.pathname === "/location/map";
 
   return (
@@ -19,21 +18,21 @@ export default function MainLayout() {
       <div className="flex-1 flex flex-col min-w-0 overflow-hidden bg-gray-50/50">
         <Header setSidebarOpen={setSidebarOpen} />
 
+        {/* ສ່ວນເນື້ອຫາ: ປັບ flex ໃຫ້ຍືດເຕັມພື້ນທີ່ */}
         <main
-          className={`flex-1 overflow-y-auto ${isMapPage ? "p-0" : "p-2.5 sm:p-4 lg:p-8"}`}
+          className={`flex-1 overflow-y-auto flex flex-col ${isMapPage ? "p-0" : "p-2.5 sm:p-4 lg:p-8"}`}
         >
           <div
-            className={`${isMapPage ? "w-full h-full relative" : "max-w-6xl mx-auto w-full pb-6 md:pb-8"}`}
+            className={`flex-1 ${isMapPage ? "w-full flex flex-col relative" : "max-w-6xl mx-auto w-full pb-6 md:pb-8"}`}
           >
-            {/* <Outlet /> ຈະຖືກແທນທີ່ດ້ວຍ Component ຂອງໜ້າຕ່າງໆ (Dashboard, List, Form...) */}
             <Outlet />
           </div>
         </main>
 
-        {!isMapPage && <Footer />}
+        {/* ເອົາເງື່ອນໄຂ !isMapPage ອອກ ເພື່ອໃຫ້ Footer ສະແດງທຸກໜ້າ */}
+        <Footer />
       </div>
 
-      {/* Background ສີດຳໂປ່ງໃສເວລາເປີດ Sidebar ໃນມືຖື */}
       {sidebarOpen && (
         <div
           className="fixed inset-0 bg-black bg-opacity-50 z-40 md:hidden backdrop-blur-sm transition-all"

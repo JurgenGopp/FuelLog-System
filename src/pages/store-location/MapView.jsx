@@ -85,15 +85,30 @@ export default function MapView() {
 
   useEffect(() => {
     if (scriptLoaded && window.google && mapRef.current && !map) {
+      // --- ແກ້ໄຂ: ເປີດເຄື່ອງມືຄືນ ແລະ ຈັດວາງຕຳແໜ່ງໃໝ່ ---
       const m = new window.google.maps.Map(mapRef.current, {
         center: { lat: 17.9757, lng: 102.6331 },
         zoom: 12,
         mapTypeId: "hybrid",
+        disableDefaultUI: false, // ເປີດເຄື່ອງມື Default ກັບຄືນມາ
         zoomControl: true,
+        zoomControlOptions: {
+          position: window.google.maps.ControlPosition.LEFT_BOTTOM, // ປຸ່ມ Zoom ໄວ້ຊ້າຍລຸ່ມ
+        },
         mapTypeControl: true,
+        mapTypeControlOptions: {
+          style: window.google.maps.MapTypeControlStyle.DROPDOWN_MENU,
+          position: window.google.maps.ControlPosition.TOP_LEFT, // ປຸ່ມເລືອກປະເພດແຜນທີ່ໄວ້ຊ້າຍເທິງ
+        },
         scaleControl: true,
         streetViewControl: true,
+        streetViewControlOptions: {
+          position: window.google.maps.ControlPosition.TOP_RIGHT, // ປຸ່ມກ້ອງ (Street View) ໄວ້ຂວາເທິງ
+        },
         fullscreenControl: true,
+        fullscreenControlOptions: {
+          position: window.google.maps.ControlPosition.TOP_RIGHT, // ປຸ່ມເຕັມໜ້າຈໍ ໄວ້ຂວາເທິງ
+        },
       });
       setMap(m);
       infoWindowRef.current = new window.google.maps.InfoWindow();
@@ -147,8 +162,8 @@ export default function MapView() {
 
         marker.addListener("click", () => {
           const content = `
-            <div style="min-width: 200px; font-family: 'Noto Sans Lao', sans-serif;">
-              <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px;">${c.customerName}</h3>
+            <div style="width: auto; max-width: 300px; font-family: 'Noto Sans Lao', sans-serif;">
+              <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; overflow-wrap: break-word;">${c.customerName}</h3>
               <div style="font-size: 13px; color: #475569; margin-bottom: 8px; line-height: 1.5;">
                 <p style="margin: 2px 0;"><b>ລະຫັດ:</b> ${c.customerCode}</p>
                 <p style="margin: 2px 0;"><b>ເບີໂທ:</b> ${c.phone}</p>
@@ -213,20 +228,21 @@ export default function MapView() {
   };
 
   return (
-    <div className="w-full h-full relative font-lao">
+    <div className="w-full h-full flex flex-col relative font-lao bg-white">
       {isLoading && (
         <div className="absolute inset-0 bg-white/70 backdrop-blur-sm z-50 flex items-center justify-center">
           <div className="animate-spin rounded-full h-12 w-12 border-4 border-orange-500 border-t-transparent"></div>
         </div>
       )}
 
-      <div className="absolute top-4 left-1/2 transform -translate-x-1/2 w-[92%] max-w-[420px] z-20 flex gap-2">
-        <div className="bg-white rounded-xl shadow-lg flex-1 flex items-center p-3 border border-gray-100 relative">
-          <Search className="text-gray-400 mr-2" size={20} />
+      {/* ແຖບຄົ້ນຫາ */}
+      <div className="p-3 border-b border-gray-100 flex gap-2 z-20 shadow-sm shrink-0 bg-white relative">
+        <div className="flex-1 flex items-center bg-gray-50 border border-gray-200 rounded-xl p-2.5 relative focus-within:ring-2 focus-within:ring-orange-500 transition">
+          <Search className="text-gray-400 mr-2 shrink-0" size={20} />
           <input
             type="text"
-            placeholder="ຄົ້ນຫາຊື່, ລະຫັດ ຫຼື ເບີໂທ..."
-            className="flex-1 outline-none text-sm font-medium"
+            placeholder="ຄົ້ນຫາຊື່ ຫຼື ລະຫັດ..."
+            className="flex-1 bg-transparent outline-none text-sm font-medium w-full"
             value={search}
             onChange={(e) => {
               setSearch(e.target.value);
@@ -240,65 +256,74 @@ export default function MapView() {
                 setSearch("");
                 setShowDropdown(false);
               }}
+              className="shrink-0"
             >
               <X className="text-gray-400" size={18} />
             </button>
           )}
+
+          {/* Dropdown ຄົ້ນຫາ */}
+          {showDropdown && search && filteredCustomers.length > 0 && (
+            <div className="absolute top-full left-0 right-0 mt-2 bg-white rounded-xl shadow-xl border border-gray-100 max-h-60 overflow-y-auto z-30">
+              {filteredCustomers.map((c) => (
+                <div
+                  key={c.id}
+                  onClick={() => focusOnCustomer(c)}
+                  className="p-3 border-b border-gray-50 hover:bg-orange-50 cursor-pointer flex justify-between items-center"
+                >
+                  <div>
+                    <div className="font-bold text-sm text-gray-800">
+                      {c.customerName}
+                    </div>
+                    <div className="text-xs text-gray-500">
+                      ບ.{c.village || "-"}, ມ.{c.district || "-"}
+                    </div>
+                  </div>
+                  <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-md">
+                    {c.customerCode}
+                  </span>
+                </div>
+              ))}
+            </div>
+          )}
         </div>
         <button
           onClick={fetchCustomers}
-          className="bg-white p-3 rounded-xl shadow-lg text-orange-500 hover:bg-orange-50"
+          className="p-3 bg-orange-50 rounded-xl border border-orange-100 text-orange-500 hover:bg-orange-100 transition shrink-0"
         >
           <RefreshCw size={20} />
         </button>
-
-        {showDropdown && search && filteredCustomers.length > 0 && (
-          <div className="absolute top-full mt-2 left-0 right-12 bg-white rounded-xl shadow-lg border border-gray-100 max-h-60 overflow-y-auto z-30">
-            {filteredCustomers.map((c) => (
-              <div
-                key={c.id}
-                onClick={() => focusOnCustomer(c)}
-                className="p-3 border-b border-gray-50 hover:bg-orange-50 cursor-pointer flex justify-between items-center"
-              >
-                <div>
-                  <div className="font-bold text-sm text-gray-800">
-                    {c.customerName}
-                  </div>
-                  <div className="text-xs text-gray-500">
-                    ບ.{c.village || "-"}, ມ.{c.district || "-"}
-                  </div>
-                </div>
-                <span className="text-[10px] font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-md">
-                  {c.customerCode}
-                </span>
-              </div>
-            ))}
-          </div>
-        )}
       </div>
 
-      <div
-        ref={mapRef}
-        className="w-full h-full bg-gray-200"
-        onClick={() => setShowDropdown(false)}
-      />
+      {/* ສ່ວນແຜນທີ່ */}
+      <div className="flex-1 relative overflow-hidden">
+        <div
+          ref={mapRef}
+          className="w-full h-full bg-gray-200"
+          onClick={() => setShowDropdown(false)}
+        />
 
-      {user?.role === "admin" && (
-        <button
-          onClick={() => navigate("/location/add")}
-          className="absolute bottom-[80px] right-[10px] w-14 h-14 flex items-center justify-center bg-orange-500 text-white rounded-full shadow-lg hover:bg-orange-600 hover:scale-105 transition-all z-10"
-          title="ເພີ່ມຮ້ານຄ້າໃໝ່"
-        >
-          <Plus size={32} strokeWidth={2.5} />
-        </button>
-      )}
+        {/* ປຸ່ມຈັດການ (ຍັງຄົງຢູ່ເບື້ອງຂວາລຸ່ມ) */}
+        <div className="absolute bottom-[30px] right-[10px] flex flex-col items-center gap-3 z-10">
+          {user?.role === "admin" && (
+            <button
+              onClick={() => navigate("/location/add")}
+              className="w-12 h-12 md:w-14 md:h-14 flex items-center justify-center bg-orange-500 text-white rounded-full shadow-[0_4px_10px_rgba(0,0,0,0.3)] hover:bg-orange-600 hover:scale-105 transition-all"
+              title="ເພີ່ມຮ້ານຄ້າໃໝ່"
+            >
+              <Plus size={28} strokeWidth={2.5} />
+            </button>
+          )}
 
-      <button
-        onClick={handleLocateMe}
-        className="absolute bottom-[20px] right-[10px] w-10 h-10 flex items-center justify-center bg-white rounded-sm shadow text-gray-600 hover:text-orange-500 transition-colors z-10"
-      >
-        <LocateFixed size={22} strokeWidth={2.5} />
-      </button>
+          <button
+            onClick={handleLocateMe}
+            className="w-10 h-10 md:w-12 md:h-12 flex items-center justify-center bg-white rounded-full shadow-[0_2px_8px_rgba(0,0,0,0.3)] text-gray-600 hover:text-orange-500 transition-colors"
+            title="ສະແດງຕຳແໜ່ງປັດຈຸບັນ"
+          >
+            <LocateFixed size={22} strokeWidth={2.5} />
+          </button>
+        </div>
+      </div>
     </div>
   );
 }
