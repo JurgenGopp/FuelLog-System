@@ -12,9 +12,10 @@ export const roleMenuAccess = {
     "locationMap",
     "locationList",
     "locationForm",
+    "locationRoute",
   ],
-  user: ["dashboard", "form", "list", "report", "locationMap"],
-  driver: ["form", "list", "locationMap"],
+  user: ["dashboard", "form", "list", "report", "locationMap", "locationRoute"],
+  driver: ["form", "list", "locationMap", "locationRoute"],
   partner: ["dashboard", "report"],
 };
 

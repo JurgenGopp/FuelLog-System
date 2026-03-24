@@ -17,6 +17,7 @@ import UserManagement from "./pages/UserManagement";
 import MapView from "./pages/store-location/MapView";
 import ListView from "./pages/store-location/ListView";
 import FormView from "./pages/store-location/FormView";
+import RoutePlanner from "./pages/store-location/RoutePlanner";
 
 /**
  * Component ສຳລັບປ້ອງກັນ Route
@@ -156,6 +157,14 @@ export default function App() {
               element={
                 <ProtectedRoute requiredMenu="locationForm">
                   <FormView />
+                </ProtectedRoute>
+              }
+            />
+            <Route
+              path="/location/route"
+              element={
+                <ProtectedRoute requiredMenu="locationRoute">
+                  <RoutePlanner />
                 </ProtectedRoute>
               }
             />

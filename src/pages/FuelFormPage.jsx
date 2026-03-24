@@ -1,7 +1,7 @@
 // src/pages/FuelFormPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Droplet, Edit, ImageIcon } from "lucide-react";
+import { Droplet, Edit, ImageIcon, AlertCircle } from "lucide-react";
 import { callApi } from "../api/config";
 import { useAuth } from "../contexts/AuthContext";
 import {
@@ -13,22 +13,24 @@ import {
 } from "../utils/helpers";
 import SearchableSelect from "../components/common/SearchableSelect";
 
-// --- Helper: ສຳລັບແປງ Google Drive Link ໃຫ້ສະແດງເປັນຮູບພາບ Preview ໄດ້ ---
+// --- Helper: ແປງ Google Drive Link ໃຫ້ເປັນ Thumbnail Link ---
 const getPreviewUrl = (url) => {
   if (!url) return "";
   // ຖ້າເປັນຮູບທີ່ອັບໂຫຼດໃໝ່ (Base64) ໃຫ້ສະແດງເລີຍ
-  if (url.startsWith("data:image")) return url;
+  if (url.startsWith("data:image") || url.startsWith("blob:")) return url;
 
-  // ຖ້າເປັນ Link ຈາກ Google Drive ໃຫ້ດຶງ ID ອອກມາແລ້ວແປງເປັນ Direct Image Link
+  // ດຶງເອົາ ID ຂອງ Google Drive ອອກມາ
   const driveMatch = url.match(/[-\w]{25,}/);
-  if (driveMatch) {
-    return `https://drive.google.com/uc?export=view&id=${driveMatch[0]}`;
+  if (driveMatch && url.includes("google")) {
+    const fileId = driveMatch[0];
+    // ເພີ່ມ timestamp ຕໍ່ທ້າຍເພື່ອບັງຄັບໃຫ້ Browser ໂຫຼດໃໝ່ທຸກຄັ້ງ (ປ້ອງກັນ Caching issues ທີ່ເຮັດໃຫ້ຮູບອອກບໍ່ຄົບ)
+    return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800-h800&t=${new Date().getTime()}`;
   }
   return url;
 };
 
 export default function FuelFormPage() {
-  const { id } = useParams(); // ຖ້າມີ id ແປວ່າເປັນການແກ້ໄຂ
+  const { id } = useParams();
   const navigate = useNavigate();
   const { user } = useAuth();
 
@@ -36,6 +38,10 @@ export default function FuelFormPage() {
   const [allLogs, setAllLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
+
+  // State ສຳລັບຈັບ Error ແຍກກັນຊັດເຈນ
+  const [receiptError, setReceiptError] = useState(false);
+  const [odometerError, setOdometerError] = useState(false);
 
   const [formData, setFormData] = useState({
     date: getLaosDateString(new Date()),
@@ -70,7 +76,6 @@ export default function FuelFormPage() {
         setCars(visibleCars || []);
         setAllLogs(visibleLogs || []);
 
-        // ຖ້າເປັນການແກ້ໄຂ ໃຫ້ເອົາຂໍ້ມູນເກົ່າມາຕື່ມໃສ່ຟອມ
         if (id) {
           const logToEdit = visibleLogs.find(
             (l) => String(l.id) === String(id),
@@ -80,6 +85,9 @@ export default function FuelFormPage() {
               ...logToEdit,
               date: getLaosDateString(logToEdit.date),
             });
+            // Reset errors ເມື່ອໂຫຼດຂໍ້ມູນສຳເລັດ
+            setReceiptError(false);
+            setOdometerError(false);
           } else {
             alert("ບໍ່ພົບຂໍ້ມູນທີ່ຕ້ອງການແກ້ໄຂ!");
             navigate("/fuel/history");
@@ -127,11 +135,15 @@ export default function FuelFormPage() {
     const file = e.target.files[0];
     if (file) {
       const reader = new FileReader();
-      reader.onloadend = () =>
+      reader.onloadend = () => {
         setFormData((prev) => ({
           ...prev,
           [`${fieldPrefix}Url`]: reader.result,
         }));
+        // ລ້າງ Error ເມື່ອມີການອັບໂຫຼດຮູບໃໝ່
+        if (fieldPrefix === "receipt") setReceiptError(false);
+        if (fieldPrefix === "odometer") setOdometerError(false);
+      };
       reader.readAsDataURL(file);
     }
   };
@@ -325,17 +337,30 @@ export default function FuelFormPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 md:gap-5 pt-2">
+              {/* ຮູບບິນ */}
               <div className="border-2 border-dashed border-gray-300 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition relative overflow-hidden group h-28 md:h-40 flex flex-col justify-center items-center cursor-pointer bg-gray-50">
                 {formData.receiptUrl ? (
-                  <div className="absolute inset-0 w-full h-full z-10">
-                    {/* ແກ້ໄຂ: ເອີ້ນໃຊ້ getPreviewUrl ກ່ອນສະແດງຜົນຮູບ */}
-                    <img
-                      src={getPreviewUrl(formData.receiptUrl)}
-                      className="w-full h-full object-cover"
-                      alt="Receipt Preview"
-                    />
+                  <div className="absolute inset-0 w-full h-full z-10 flex items-center justify-center bg-gray-100">
+                    {!receiptError ? (
+                      <img
+                        src={getPreviewUrl(formData.receiptUrl)}
+                        className="w-full h-full object-cover"
+                        alt="Receipt"
+                        onError={() => setReceiptError(true)}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="text-center p-2">
+                        <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-1" />
+                        <span className="text-[10px] md:text-xs text-gray-500">
+                          ຮູບບໍ່ພ້ອມໃຊ້ງານ
+                          <br />
+                          ຫຼື ຖືກບຼັອກ
+                        </span>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <span className="text-white font-bold px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm bg-black bg-opacity-60 rounded-lg md:rounded-xl backdrop-blur-sm flex items-center space-x-1.5 md:space-x-2">
+                      <span className="text-white font-bold px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm bg-black bg-opacity-60 rounded-lg backdrop-blur-sm flex items-center space-x-1.5">
                         <Edit className="w-3 h-3 md:w-4 h-4" />{" "}
                         <span>ປ່ຽນຮູບ</span>
                       </span>
@@ -357,17 +382,30 @@ export default function FuelFormPage() {
                 />
               </div>
 
+              {/* ຮູບເລກກິໂລ */}
               <div className="border-2 border-dashed border-gray-300 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition relative overflow-hidden group h-28 md:h-40 flex flex-col justify-center items-center cursor-pointer bg-gray-50">
                 {formData.odometerUrl ? (
-                  <div className="absolute inset-0 w-full h-full z-10">
-                    {/* ແກ້ໄຂ: ເອີ້ນໃຊ້ getPreviewUrl ກ່ອນສະແດງຜົນຮູບ */}
-                    <img
-                      src={getPreviewUrl(formData.odometerUrl)}
-                      className="w-full h-full object-cover"
-                      alt="Odometer Preview"
-                    />
+                  <div className="absolute inset-0 w-full h-full z-10 flex items-center justify-center bg-gray-100">
+                    {!odometerError ? (
+                      <img
+                        src={getPreviewUrl(formData.odometerUrl)}
+                        className="w-full h-full object-cover"
+                        alt="Odometer"
+                        onError={() => setOdometerError(true)}
+                        loading="lazy"
+                      />
+                    ) : (
+                      <div className="text-center p-2">
+                        <AlertCircle className="w-6 h-6 text-red-400 mx-auto mb-1" />
+                        <span className="text-[10px] md:text-xs text-gray-500">
+                          ຮູບບໍ່ພ້ອມໃຊ້ງານ
+                          <br />
+                          ຫຼື ຖືກບຼັອກ
+                        </span>
+                      </div>
+                    )}
                     <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
-                      <span className="text-white font-bold px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm bg-black bg-opacity-60 rounded-lg md:rounded-xl backdrop-blur-sm flex items-center space-x-1.5 md:space-x-2">
+                      <span className="text-white font-bold px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm bg-black bg-opacity-60 rounded-lg backdrop-blur-sm flex items-center space-x-1.5">
                         <Edit className="w-3 h-3 md:w-4 h-4" />{" "}
                         <span>ປ່ຽນຮູບ</span>
                       </span>

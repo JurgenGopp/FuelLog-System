@@ -12,6 +12,7 @@ import {
   Users,
   User,
   LogOut,
+  Route,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
 
@@ -109,6 +110,17 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
               <MapIcon className="w-4 h-4 md:w-5 md:h-5" />{" "}
               <span>ແຜນທີ່ຮ້ານຄ້າ</span>
             </NavLink>
+            {/* --- ເພີ່ມເມນູໃໝ່ບ່ອນນີ້ --- */}
+            {hasAccess("locationRoute") && (
+              <NavLink
+                to="/location/route"
+                onClick={() => setSidebarOpen(false)}
+                className={navLinkClass}
+              >
+                <Route className="w-4 h-4 md:w-5 md:h-5" />{" "}
+                <span>ຄົ້ນຫາເສັ້ນທາງ</span>
+              </NavLink>
+            )}
             {hasAccess("locationList") && (
               <NavLink
                 to="/location/list"
