@@ -1,0 +1,380 @@
+// src/pages/FuelFormPage.jsx
+import React, { useState, useEffect } from "react";
+import { useNavigate, useParams } from "react-router-dom";
+import { Droplet, Edit, ImageIcon } from "lucide-react";
+import { callApi } from "../api/config";
+import { useAuth } from "../contexts/AuthContext";
+import {
+  getLaosDateString,
+  formatInteger,
+  formatNumber,
+  generateLogId,
+  generateImageFilename,
+} from "../utils/helpers";
+import SearchableSelect from "../components/common/SearchableSelect";
+
+export default function FuelFormPage() {
+  const { id } = useParams(); // ຖ້າມີ id ແປວ່າເປັນການແກ້ໄຂ
+  const navigate = useNavigate();
+  const { user } = useAuth();
+
+  const [cars, setCars] = useState([]);
+  const [allLogs, setAllLogs] = useState([]);
+  const [isLoading, setIsLoading] = useState(true);
+  const [isSaving, setIsSaving] = useState(false);
+
+  const [formData, setFormData] = useState({
+    date: getLaosDateString(new Date()),
+    licensePlate: "",
+    liters: "",
+    pricePerLiter: "",
+    totalPrice: "0.00",
+    actualPaid: "",
+    difference: "0.00",
+    odometer: "",
+    distance: "0.00",
+    consumption: "0.00",
+    receiptUrl: "",
+    odometerUrl: "",
+  });
+
+  useEffect(() => {
+    const loadData = async () => {
+      setIsLoading(true);
+      const res = await callApi({ action: "getData" });
+      if (res.success) {
+        const visibleCars =
+          user?.role === "admin"
+            ? res.cars
+            : res.cars.filter((c) => user?.assignedCars?.includes(c));
+        const visibleLogs =
+          user?.role === "admin"
+            ? res.logs
+            : res.logs.filter((l) =>
+                user?.assignedCars?.includes(l.licensePlate),
+              );
+        setCars(visibleCars || []);
+        setAllLogs(visibleLogs || []);
+
+        // ຖ້າເປັນການແກ້ໄຂ ໃຫ້ເອົາຂໍ້ມູນເກົ່າມາຕື່ມໃສ່ຟອມ
+        if (id) {
+          const logToEdit = visibleLogs.find(
+            (l) => String(l.id) === String(id),
+          );
+          if (logToEdit) {
+            setFormData({
+              ...logToEdit,
+              date: getLaosDateString(logToEdit.date),
+            });
+          } else {
+            alert("ບໍ່ພົບຂໍ້ມູນທີ່ຕ້ອງການແກ້ໄຂ!");
+            navigate("/fuel/history");
+          }
+        }
+      }
+      setIsLoading(false);
+    };
+    loadData();
+  }, [id, user, navigate]);
+
+  const handleChange = (e) => {
+    const { name, value } = e.target;
+    let newData = { ...formData, [name]: value };
+
+    const liters = parseFloat(newData.liters) || 0;
+    const price = parseFloat(newData.pricePerLiter) || 0;
+    const paid = parseFloat(newData.actualPaid) || 0;
+
+    newData.totalPrice = (liters * price).toFixed(2);
+    newData.difference = (liters * price - paid).toFixed(2);
+
+    if (["licensePlate", "odometer", "liters"].includes(name)) {
+      const currentOdo = parseFloat(newData.odometer) || 0;
+      const pastLogs = allLogs.filter(
+        (l) =>
+          l.licensePlate === newData.licensePlate &&
+          String(l.id) !== String(id),
+      );
+      let prevOdo =
+        pastLogs.length > 0
+          ? Math.max(...pastLogs.map((l) => parseFloat(l.odometer) || 0))
+          : 0;
+
+      const dist =
+        prevOdo > 0 && currentOdo > prevOdo ? currentOdo - prevOdo : 0;
+      newData.distance = dist.toFixed(2);
+      newData.consumption =
+        dist > 0 && liters > 0 ? (dist / liters).toFixed(2) : "0.00";
+    }
+    setFormData(newData);
+  };
+
+  const handleImageUpload = (e, fieldPrefix) => {
+    const file = e.target.files[0];
+    if (file) {
+      const reader = new FileReader();
+      reader.onloadend = () =>
+        setFormData((prev) => ({
+          ...prev,
+          [`${fieldPrefix}Url`]: reader.result,
+        }));
+      reader.readAsDataURL(file);
+    }
+  };
+
+  const handleSave = async (e) => {
+    e.preventDefault();
+    setIsSaving(true);
+    const isEdit = !!id;
+    const finalId = isEdit ? id : generateLogId(formData.date, allLogs);
+
+    const payloadData = {
+      ...formData,
+      id: finalId,
+      receiptFileName: generateImageFilename(
+        "Receipt",
+        formData.licensePlate,
+        formData.date,
+        allLogs,
+        id,
+      ),
+      odoFileName: generateImageFilename(
+        "ODO",
+        formData.licensePlate,
+        formData.date,
+        allLogs,
+        id,
+      ),
+      createdAt: isEdit
+        ? formData.createdAt
+        : new Date().toLocaleString("lo-LA", { timeZone: "Asia/Vientiane" }),
+      createdBy: isEdit ? formData.createdBy : user.name,
+    };
+
+    const res = await callApi({
+      action: isEdit ? "editLog" : "addLog",
+      data: payloadData,
+    });
+
+    if (res.success !== false) {
+      alert("ບັນທຶກຂໍ້ມູນສຳເລັດ");
+      navigate("/fuel/history");
+    } else {
+      alert("ບັນທຶກຂໍ້ມູນບໍ່ສຳເລັດ: " + res.message);
+    }
+    setIsSaving(false);
+  };
+
+  if (isLoading)
+    return (
+      <div className="flex justify-center py-20">
+        <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+
+  return (
+    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 p-4 md:p-8 font-lao animate-in slide-in-from-bottom-4 duration-300 mb-4">
+      <h2 className="text-lg md:text-2xl font-bold text-gray-800 mb-4 md:mb-8 border-b pb-3 md:pb-4 flex items-center space-x-2 md:space-x-3">
+        <div className="bg-orange-100 p-1.5 md:p-2 rounded-lg">
+          <Droplet className="text-orange-500 w-5 h-5 md:w-6 h-6" />
+        </div>
+        <span>{id ? "ແກ້ໄຂຂໍ້ມູນ" : "ບັນທຶກການໃສ່ນ້ຳມັນ"}</span>
+      </h2>
+      <form onSubmit={handleSave} className="space-y-6 md:space-y-8">
+        <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
+          <div className="space-y-4 md:space-y-5">
+            <div>
+              <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
+                ວັນທີ
+              </label>
+              <input
+                type="date"
+                name="date"
+                required
+                value={formData.date}
+                onChange={handleChange}
+                className="w-full h-[40px] md:h-[48px] px-3 md:px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 text-sm md:text-base"
+              />
+            </div>
+            <div className="z-20 relative">
+              <SearchableSelect
+                label="ທະບຽນລົດ"
+                placeholder="-- ເລືອກ ຫຼື ພິມຄົ້ນຫາ --"
+                value={formData.licensePlate}
+                options={cars}
+                onChange={(val) =>
+                  handleChange({ target: { name: "licensePlate", value: val } })
+                }
+              />
+            </div>
+            <div className="grid grid-cols-2 gap-3 md:gap-5 z-10 relative">
+              <div>
+                <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
+                  ຈຳນວນ (ລິດ)
+                </label>
+                <input
+                  type="number"
+                  step="0.01"
+                  name="liters"
+                  required
+                  value={formData.liters}
+                  onChange={handleChange}
+                  className="w-full h-[40px] md:h-[48px] px-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50"
+                />
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
+                  ລາຄາ/ລິດ (ກີບ)
+                </label>
+                <input
+                  type="number"
+                  name="pricePerLiter"
+                  required
+                  value={formData.pricePerLiter}
+                  onChange={handleChange}
+                  className="w-full h-[40px] md:h-[48px] px-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50"
+                />
+              </div>
+            </div>
+            <div className="bg-orange-50 p-4 md:p-6 rounded-xl border border-orange-100 shadow-inner space-y-3">
+              <div className="flex justify-between items-center text-xs md:text-sm">
+                <span className="text-gray-600 font-medium">
+                  ລາຄາລວມ (Auto):
+                </span>
+                <span className="text-base md:text-lg font-black text-gray-800">
+                  {formatInteger(formData.totalPrice)} ກີບ
+                </span>
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-black text-gray-800 mb-1">
+                  ລາຄາຈ່າຍຈິງ (ກີບ)
+                </label>
+                <input
+                  type="number"
+                  name="actualPaid"
+                  required
+                  value={formData.actualPaid}
+                  onChange={handleChange}
+                  className="w-full h-[48px] px-3 border-2 border-orange-300 rounded-lg focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none font-bold text-lg text-orange-600"
+                />
+              </div>
+              <div className="flex justify-between items-center text-xs md:text-sm pt-2 border-t border-orange-200">
+                <span className="text-gray-600 font-medium">
+                  ສ່ວນຕ່າງ (Auto):
+                </span>
+                <span
+                  className={`text-base font-black ${Number(formData.difference) < 0 ? "text-red-500" : "text-green-600"}`}
+                >
+                  {Number(formData.difference) > 0 ? "+" : ""}
+                  {formatInteger(formData.difference)} ກີບ
+                </span>
+              </div>
+            </div>
+          </div>
+
+          <div className="space-y-4 md:space-y-5">
+            <div>
+              <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
+                ເລກຫຼັກລົດ (ກມ.)
+              </label>
+              <input
+                type="number"
+                name="odometer"
+                required
+                value={formData.odometer}
+                onChange={handleChange}
+                className="w-full h-[40px] md:h-[48px] px-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50"
+              />
+            </div>
+            <div className="bg-blue-50 p-4 md:p-6 rounded-xl border border-blue-100 space-y-2 shadow-inner">
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium text-xs md:text-sm">
+                  ໄລຍະທາງຫຼັງເຕີມລ່າສຸດ:
+                </span>
+                <span className="text-lg font-black text-blue-600">
+                  {formatNumber(formData.distance)} ກມ.
+                </span>
+              </div>
+              <div className="flex justify-between items-center">
+                <span className="text-gray-600 font-medium text-xs md:text-sm">
+                  ອັດຕາສິ້ນເປືອງ:
+                </span>
+                <span className="text-lg font-black text-blue-600">
+                  {formatNumber(formData.consumption)} ກມ./ລິດ
+                </span>
+              </div>
+            </div>
+
+            <div className="grid grid-cols-2 gap-3 md:gap-5 pt-2">
+              <div className="border-2 border-dashed border-gray-300 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition relative overflow-hidden group h-28 md:h-40 flex flex-col justify-center items-center cursor-pointer bg-gray-50">
+                {formData.receiptUrl ? (
+                  <div className="absolute inset-0 z-10">
+                    <img
+                      src={formData.receiptUrl}
+                      className="w-full h-full object-cover"
+                      alt="Receipt"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center p-3 text-center">
+                    <ImageIcon className="w-6 h-6 text-orange-400 mb-2" />
+                    <span className="text-xs md:text-sm font-bold text-gray-700">
+                      ອັບໂຫຼດ ຮູບບິນ
+                    </span>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, "receipt")}
+                  className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                />
+              </div>
+              <div className="border-2 border-dashed border-gray-300 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition relative overflow-hidden group h-28 md:h-40 flex flex-col justify-center items-center cursor-pointer bg-gray-50">
+                {formData.odometerUrl ? (
+                  <div className="absolute inset-0 z-10">
+                    <img
+                      src={formData.odometerUrl}
+                      className="w-full h-full object-cover"
+                      alt="Odometer"
+                    />
+                  </div>
+                ) : (
+                  <div className="flex flex-col items-center p-3 text-center">
+                    <ImageIcon className="w-6 h-6 text-orange-400 mb-2" />
+                    <span className="text-xs md:text-sm font-bold text-gray-700">
+                      ອັບໂຫຼດ ຮູບເລກກິໂລ
+                    </span>
+                  </div>
+                )}
+                <input
+                  type="file"
+                  accept="image/*"
+                  onChange={(e) => handleImageUpload(e, "odometer")}
+                  className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                />
+              </div>
+            </div>
+          </div>
+        </div>
+
+        <div className="flex justify-end space-x-3 md:space-x-4 pt-6 md:pt-8 border-t border-gray-100">
+          <button
+            type="button"
+            onClick={() => navigate("/fuel/history")}
+            className="px-6 py-2.5 text-sm md:text-base text-gray-600 bg-gray-100 hover:bg-gray-200 font-bold rounded-lg transition"
+          >
+            ຍົກເລີກ
+          </button>
+          <button
+            type="submit"
+            disabled={isSaving}
+            className="px-6 py-2.5 text-sm md:text-base text-white bg-orange-500 hover:bg-orange-600 font-bold rounded-lg transition shadow-md flex items-center"
+          >
+            {isSaving ? "ກຳລັງບັນທຶກ..." : "ບັນທຶກຂໍ້ມູນ"}
+          </button>
+        </div>
+      </form>
+    </div>
+  );
+}
