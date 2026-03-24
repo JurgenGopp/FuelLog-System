@@ -20,6 +20,23 @@ export default function MapView() {
   const infoWindowRef = useRef(null);
   const userMarkerRef = useRef(null);
 
+  // --- ເພີ່ມ CSS ສຳລັບຫຍໍ້ຂະໜາດປຸ່ມເລືອກປະເພດແຜນທີ່ ---
+  useEffect(() => {
+    const style = document.createElement("style");
+    style.innerHTML = `
+      .gmnoprint.gm-style-mtc {
+        transform: scale(0.85); /* ຫຍໍ້ຂະໜາດລົງ 15% */
+        transform-origin: top left;
+        margin-top: 5px !important;
+        margin-left: 5px !important;
+      }
+    `;
+    document.head.appendChild(style);
+    return () => {
+      document.head.removeChild(style);
+    };
+  }, []);
+
   const fetchCustomers = async () => {
     setIsLoading(true);
     try {
@@ -85,29 +102,29 @@ export default function MapView() {
 
   useEffect(() => {
     if (scriptLoaded && window.google && mapRef.current && !map) {
-      // --- ແກ້ໄຂ: ເປີດເຄື່ອງມືຄືນ ແລະ ຈັດວາງຕຳແໜ່ງໃໝ່ ---
       const m = new window.google.maps.Map(mapRef.current, {
         center: { lat: 17.9757, lng: 102.6331 },
         zoom: 12,
         mapTypeId: "hybrid",
-        disableDefaultUI: false, // ເປີດເຄື່ອງມື Default ກັບຄືນມາ
+        gestureHandling: "greedy", // --- ແກ້ໄຂ: ອະນຸຍາດໃຫ້ໃຊ້ນິ້ວດຽວເລື່ອນແຜນທີ່ໄດ້ ---
+        disableDefaultUI: false,
         zoomControl: true,
         zoomControlOptions: {
-          position: window.google.maps.ControlPosition.LEFT_BOTTOM, // ປຸ່ມ Zoom ໄວ້ຊ້າຍລຸ່ມ
+          position: window.google.maps.ControlPosition.LEFT_BOTTOM,
         },
         mapTypeControl: true,
         mapTypeControlOptions: {
           style: window.google.maps.MapTypeControlStyle.DROPDOWN_MENU,
-          position: window.google.maps.ControlPosition.TOP_LEFT, // ປຸ່ມເລືອກປະເພດແຜນທີ່ໄວ້ຊ້າຍເທິງ
+          position: window.google.maps.ControlPosition.TOP_LEFT,
         },
         scaleControl: true,
         streetViewControl: true,
         streetViewControlOptions: {
-          position: window.google.maps.ControlPosition.TOP_RIGHT, // ປຸ່ມກ້ອງ (Street View) ໄວ້ຂວາເທິງ
+          position: window.google.maps.ControlPosition.TOP_RIGHT,
         },
         fullscreenControl: true,
         fullscreenControlOptions: {
-          position: window.google.maps.ControlPosition.TOP_RIGHT, // ປຸ່ມເຕັມໜ້າຈໍ ໄວ້ຂວາເທິງ
+          position: window.google.maps.ControlPosition.TOP_RIGHT,
         },
       });
       setMap(m);
@@ -303,7 +320,7 @@ export default function MapView() {
           onClick={() => setShowDropdown(false)}
         />
 
-        {/* ປຸ່ມຈັດການ (ຍັງຄົງຢູ່ເບື້ອງຂວາລຸ່ມ) */}
+        {/* ປຸ່ມຈັດການ */}
         <div className="absolute bottom-[30px] right-[10px] flex flex-col items-center gap-3 z-10">
           {user?.role === "admin" && (
             <button
