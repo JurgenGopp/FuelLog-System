@@ -11,6 +11,10 @@ import {
   ArrowDown,
   ExternalLink,
   RefreshCw,
+  Calendar,
+  Droplet,
+  MapPin,
+  Image as ImageIcon,
 } from "lucide-react";
 import { callApi } from "../api/config";
 import { useAuth } from "../contexts/AuthContext";
@@ -112,12 +116,12 @@ export default function FuelList() {
   const renderSortIcon = (columnKey) => {
     if (sortConfig.key !== columnKey)
       return (
-        <ArrowUpDown className="w-2 h-2 md:w-3 h-3 ml-1 inline-block text-gray-400 opacity-50" />
+        <ArrowUpDown className="w-3 h-3 ml-1 inline-block text-gray-400 opacity-50" />
       );
     return sortConfig.direction === "asc" ? (
-      <ArrowUp className="w-2 h-2 md:w-3 h-3 ml-1 inline-block text-orange-500" />
+      <ArrowUp className="w-3 h-3 ml-1 inline-block text-orange-500" />
     ) : (
-      <ArrowDown className="w-2 h-2 md:w-3 h-3 ml-1 inline-block text-orange-500" />
+      <ArrowDown className="w-3 h-3 ml-1 inline-block text-orange-500" />
     );
   };
 
@@ -129,9 +133,10 @@ export default function FuelList() {
     );
 
   return (
-    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in slide-in-from-bottom-4 duration-300">
+    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in slide-in-from-bottom-4 duration-300 font-lao">
+      {/* --- Header --- */}
       <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
-        <h3 className="text-base md:text-lg font-bold text-gray-800 font-lao flex items-center space-x-2">
+        <h3 className="text-base md:text-lg font-bold text-gray-800 flex items-center space-x-2">
           <span>ປະຫວັດການໃສ່ນ້ຳມັນ</span>
           <button
             onClick={loadData}
@@ -143,12 +148,13 @@ export default function FuelList() {
         </h3>
         <button
           onClick={() => navigate("/fuel/add")}
-          className="bg-orange-500 hover:bg-orange-600 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl text-xs md:text-sm font-bold flex items-center space-x-1 md:space-x-2 transition shadow-md"
+          className="bg-orange-500 hover:bg-orange-600 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl text-xs md:text-sm font-bold flex items-center space-x-1.5 md:space-x-2 transition shadow-md active:scale-95"
         >
-          <Plus className="w-3 h-3 md:w-4 h-4" /> <span>ເພີ່ມໃໝ່</span>
+          <Plus className="w-4 h-4" /> <span>ເພີ່ມໃໝ່</span>
         </button>
       </div>
 
+      {/* --- Filter --- */}
       <div className="p-4 md:p-5 border-b border-gray-100 bg-white grid grid-cols-1 md:grid-cols-3 gap-3 md:gap-5">
         <div className="flex flex-col z-20 relative min-w-0 w-full">
           <label className="text-[10px] md:text-xs font-bold text-gray-500 mb-1.5 md:mb-2">
@@ -159,9 +165,9 @@ export default function FuelList() {
               type="date"
               value={filterDate}
               onChange={(e) => setFilterDate(e.target.value)}
-              className="block w-full min-w-full h-[40px] md:h-[48px] pl-8 md:pl-10 pr-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-xs md:text-sm font-medium bg-gray-50 m-0"
+              className="block w-full min-w-full h-[40px] md:h-[48px] pl-8 md:pl-10 pr-3 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 text-sm font-medium bg-gray-50 hover:bg-white transition m-0"
             />
-            <Filter className="w-3 h-3 md:w-4 h-4 text-gray-400 absolute left-2.5 md:left-3.5 top-2.5 md:top-3 pointer-events-none" />
+            <Filter className="w-4 h-4 text-gray-400 absolute left-3 md:left-3.5 top-2.5 md:top-3.5 pointer-events-none" />
           </div>
         </div>
         <div className="flex flex-col z-20 relative min-w-0 w-full">
@@ -181,84 +187,85 @@ export default function FuelList() {
               setFilterPlate("");
               setSortConfig({ key: "date", direction: "desc" });
             }}
-            className="px-4 md:px-5 h-[40px] md:h-[48px] text-xs md:text-sm text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg font-bold transition w-full md:w-auto"
+            className="px-4 md:px-5 h-[40px] md:h-[48px] text-xs md:text-sm text-orange-600 bg-orange-50 hover:bg-orange-100 rounded-lg font-bold transition w-full md:w-auto active:scale-95"
           >
             ລ້າງການຄົ້ນຫາ/ຈັດລຽງ
           </button>
         </div>
       </div>
 
-      <div className="overflow-auto max-h-[65vh]">
-        <table className="w-full text-left text-xs md:text-sm text-gray-600 whitespace-nowrap relative">
-          <thead className="bg-gray-50 text-gray-700 uppercase text-[10px] md:text-xs border-b border-gray-100 sticky top-0 z-10 shadow-[0_1px_2px_rgba(0,0,0,0.05)]">
+      {/* --- Desktop Table View --- */}
+      <div className="hidden md:block overflow-x-auto p-2">
+        <table className="w-full min-w-[950px] text-left text-sm text-gray-600 whitespace-nowrap relative">
+          <thead className="bg-gray-50 text-gray-700 uppercase text-xs border-b border-gray-200">
             <tr>
-              <th className="px-3 py-3 md:px-4 md:py-4 text-center">ລ/ດ</th>
+              <th className="px-4 py-4 text-center font-bold">ລ/ດ</th>
               <th
-                className="px-3 py-3 md:px-6 md:py-4 cursor-pointer"
+                className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition font-bold"
                 onClick={() => requestSort("date")}
               >
                 ວັນທີ {renderSortIcon("date")}
               </th>
               <th
-                className="px-3 py-3 md:px-6 md:py-4 cursor-pointer"
+                className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition font-bold"
                 onClick={() => requestSort("licensePlate")}
               >
                 ທະບຽນລົດ {renderSortIcon("licensePlate")}
               </th>
               <th
-                className="px-3 py-3 md:px-6 md:py-4 cursor-pointer"
+                className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition font-bold"
                 onClick={() => requestSort("liters")}
               >
                 ລິດ {renderSortIcon("liters")}
               </th>
               <th
-                className="px-3 py-3 md:px-6 md:py-4 cursor-pointer"
+                className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition font-bold text-right"
                 onClick={() => requestSort("actualPaid")}
               >
                 ຈ່າຍຈິງ (ກີບ) {renderSortIcon("actualPaid")}
               </th>
               <th
-                className="px-3 py-3 md:px-6 md:py-4 cursor-pointer"
+                className="px-6 py-4 cursor-pointer hover:bg-gray-100 transition font-bold text-right"
                 onClick={() => requestSort("odometer")}
               >
                 ເລກຫຼັກລົດ (ກມ) {renderSortIcon("odometer")}
               </th>
-              <th className="px-3 py-3 md:px-6 md:py-4 text-center">ຮູບພາບ</th>
-              <th className="px-3 py-3 md:px-6 md:py-4 text-center">ຈັດການ</th>
+              <th className="px-6 py-4 text-center font-bold">ຮູບພາບ</th>
+              <th className="px-6 py-4 text-center font-bold">ຈັດການ</th>
             </tr>
           </thead>
           <tbody className="divide-y divide-gray-100">
             {sortedLogs.length > 0 ? (
               sortedLogs.map((log, index) => (
                 <tr key={log.id} className="hover:bg-orange-50/50 transition">
-                  <td className="px-3 py-3 md:px-4 text-center text-gray-400 font-medium">
+                  <td className="px-4 py-4 text-center text-gray-400 font-medium">
                     {index + 1}
                   </td>
-                  <td className="px-3 py-3 md:px-6 font-medium">
+                  <td className="px-6 py-4 font-medium">
                     {formatDateDisplay(log.date)}
                   </td>
-                  <td className="px-3 py-3 md:px-6 font-black text-gray-800">
+                  <td className="px-6 py-4 font-black text-gray-800 text-base">
                     {log.licensePlate}
                   </td>
-                  <td className="px-3 py-3 md:px-6">
+                  <td className="px-6 py-4 font-bold">
                     {formatNumber(log.liters)}
                   </td>
-                  <td className="px-3 py-3 md:px-6 text-orange-600 font-black">
+                  <td className="px-6 py-4 text-orange-600 font-black text-right text-base">
                     {formatInteger(log.actualPaid)}
                   </td>
-                  <td className="px-3 py-3 md:px-6">
+                  <td className="px-6 py-4 font-medium text-right">
                     {formatInteger(log.odometer)}
                   </td>
-                  <td className="px-3 py-3 md:px-6 text-center">
-                    <div className="flex justify-center space-x-1.5 md:space-x-2">
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex justify-center space-x-2">
                       {log.receiptUrl?.startsWith("http") ? (
                         <a
                           href={log.receiptUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-1.5 py-1 bg-orange-100 text-orange-600 font-bold rounded flex"
+                          className="px-2 py-1.5 bg-orange-100 text-orange-600 font-bold rounded-lg flex items-center gap-1 hover:bg-orange-200 transition"
                         >
-                          <ExternalLink className="w-3 h-3" />
+                          <ImageIcon size={14} /> ບິນ
                         </a>
                       ) : (
                         <span className="text-gray-300">-</span>
@@ -268,29 +275,29 @@ export default function FuelList() {
                           href={log.odometerUrl}
                           target="_blank"
                           rel="noreferrer"
-                          className="px-1.5 py-1 bg-blue-100 text-blue-600 font-bold rounded flex"
+                          className="px-2 py-1.5 bg-blue-100 text-blue-600 font-bold rounded-lg flex items-center gap-1 hover:bg-blue-200 transition"
                         >
-                          <ExternalLink className="w-3 h-3" />
+                          <MapPin size={14} /> ກິໂລ
                         </a>
                       ) : (
                         <span className="text-gray-300">-</span>
                       )}
                     </div>
                   </td>
-                  <td className="px-3 py-3 md:px-6 text-center">
-                    <div className="flex justify-center space-x-1.5">
+                  <td className="px-6 py-4 text-center">
+                    <div className="flex justify-center space-x-2">
                       <button
                         onClick={() => navigate(`/fuel/edit/${log.id}`)}
-                        className="p-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded"
+                        className="p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition shadow-sm"
                       >
-                        <Edit className="w-3 h-3 md:w-4 h-4" />
+                        <Edit size={16} />
                       </button>
                       {(user?.role === "admin" || user?.role === "user") && (
                         <button
                           onClick={() => handleDelete(log.id)}
-                          className="p-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded"
+                          className="p-2 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition shadow-sm"
                         >
-                          <Trash2 className="w-3 h-3 md:w-4 h-4" />
+                          <Trash2 size={16} />
                         </button>
                       )}
                     </div>
@@ -299,13 +306,131 @@ export default function FuelList() {
               ))
             ) : (
               <tr>
-                <td colSpan="8" className="text-center py-12 text-gray-400">
+                <td
+                  colSpan="8"
+                  className="text-center py-16 text-gray-400 font-medium"
+                >
                   ບໍ່ມີຂໍ້ມູນທີ່ກົງກັບການຄົ້ນຫາ
                 </td>
               </tr>
             )}
           </tbody>
         </table>
+      </div>
+
+      {/* --- Mobile Card View --- */}
+      <div className="md:hidden flex flex-col gap-3 p-3 bg-gray-50/50">
+        {sortedLogs.length > 0 ? (
+          sortedLogs.map((log, index) => (
+            <div
+              key={log.id}
+              className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-3 relative overflow-hidden"
+            >
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-400"></div>
+
+              {/* ຫົວຂໍ້: ທະບຽນລົດ ແລະ ວັນທີ */}
+              <div className="flex justify-between items-start pl-2">
+                <div>
+                  <h4 className="font-black text-gray-800 text-lg tracking-wide">
+                    {log.licensePlate}
+                  </h4>
+                  <p className="text-xs text-gray-500 mt-1 flex items-center gap-1.5 font-medium">
+                    <Calendar size={12} className="text-orange-500" />{" "}
+                    {formatDateDisplay(log.date)}
+                  </p>
+                </div>
+                <div className="text-right">
+                  <span className="font-black text-orange-600 text-sm bg-orange-50 px-2.5 py-1.5 rounded-lg border border-orange-100 shadow-sm">
+                    {formatInteger(log.actualPaid)} ₭
+                  </span>
+                </div>
+              </div>
+
+              {/* ລາຍລະອຽດການເຕີມ */}
+              <div className="grid grid-cols-2 gap-2 pl-2 mt-1">
+                <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
+                  <p className="text-[10px] text-gray-400 font-bold mb-0.5 flex items-center gap-1">
+                    <Droplet size={10} /> ຈຳນວນນ້ຳມັນ
+                  </p>
+                  <p className="text-sm font-bold text-gray-700">
+                    {formatNumber(log.liters)}{" "}
+                    <span className="text-xs font-medium text-gray-500">
+                      ລິດ
+                    </span>
+                  </p>
+                </div>
+                <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
+                  <p className="text-[10px] text-gray-400 font-bold mb-0.5 flex items-center gap-1">
+                    <MapPin size={10} /> ເລກກິໂລ (ກມ.)
+                  </p>
+                  <p className="text-sm font-bold text-gray-700">
+                    {formatInteger(log.odometer)}
+                  </p>
+                </div>
+              </div>
+
+              {/* ປຸ່ມຮູບພາບ ແລະ ຈັດການ */}
+              <div className="flex items-center justify-between mt-1 pt-3 border-t border-gray-100 pl-2">
+                <div className="flex gap-2">
+                  {log.receiptUrl?.startsWith("http") ? (
+                    <a
+                      href={log.receiptUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center w-8 h-8 bg-orange-50 text-orange-600 rounded-lg hover:bg-orange-100 transition"
+                      title="ເບິ່ງບິນ"
+                    >
+                      <ImageIcon size={16} />
+                    </a>
+                  ) : (
+                    <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center opacity-50">
+                      <ImageIcon size={16} className="text-gray-300" />
+                    </div>
+                  )}
+
+                  {log.odometerUrl?.startsWith("http") ? (
+                    <a
+                      href={log.odometerUrl}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center justify-center w-8 h-8 bg-blue-50 text-blue-600 rounded-lg hover:bg-blue-100 transition"
+                      title="ເບິ່ງເລກກິໂລ"
+                    >
+                      <MapPin size={16} />
+                    </a>
+                  ) : (
+                    <div className="w-8 h-8 bg-gray-50 rounded-lg flex items-center justify-center opacity-50">
+                      <MapPin size={16} className="text-gray-300" />
+                    </div>
+                  )}
+                </div>
+
+                <div className="flex gap-2">
+                  <button
+                    onClick={() => navigate(`/fuel/edit/${log.id}`)}
+                    className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition"
+                  >
+                    <Edit size={14} />{" "}
+                    <span className="hidden sm:inline">ແກ້ໄຂ</span>
+                  </button>
+                  {(user?.role === "admin" || user?.role === "user") && (
+                    <button
+                      onClick={() => handleDelete(log.id)}
+                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition"
+                    >
+                      <Trash2 size={14} />{" "}
+                      <span className="hidden sm:inline">ລຶບ</span>
+                    </button>
+                  )}
+                </div>
+              </div>
+            </div>
+          ))
+        ) : (
+          <div className="text-center py-10 text-gray-400 text-sm font-medium">
+            ບໍ່ມີຂໍ້ມູນທີ່ກົງກັບການຄົ້ນຫາ
+          </div>
+        )}
       </div>
     </div>
   );
