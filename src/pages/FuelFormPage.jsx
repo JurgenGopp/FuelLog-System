@@ -13,6 +13,20 @@ import {
 } from "../utils/helpers";
 import SearchableSelect from "../components/common/SearchableSelect";
 
+// --- Helper: ສຳລັບແປງ Google Drive Link ໃຫ້ສະແດງເປັນຮູບພາບ Preview ໄດ້ ---
+const getPreviewUrl = (url) => {
+  if (!url) return "";
+  // ຖ້າເປັນຮູບທີ່ອັບໂຫຼດໃໝ່ (Base64) ໃຫ້ສະແດງເລີຍ
+  if (url.startsWith("data:image")) return url;
+
+  // ຖ້າເປັນ Link ຈາກ Google Drive ໃຫ້ດຶງ ID ອອກມາແລ້ວແປງເປັນ Direct Image Link
+  const driveMatch = url.match(/[-\w]{25,}/);
+  if (driveMatch) {
+    return `https://drive.google.com/uc?export=view&id=${driveMatch[0]}`;
+  }
+  return url;
+};
+
 export default function FuelFormPage() {
   const { id } = useParams(); // ຖ້າມີ id ແປວ່າເປັນການແກ້ໄຂ
   const navigate = useNavigate();
@@ -157,7 +171,6 @@ export default function FuelFormPage() {
     });
 
     if (res.success !== false) {
-      alert("ບັນທຶກຂໍ້ມູນສຳເລັດ");
       navigate("/fuel/history");
     } else {
       alert("ບັນທຶກຂໍ້ມູນບໍ່ສຳເລັດ: " + res.message);
@@ -182,8 +195,8 @@ export default function FuelFormPage() {
       </h2>
       <form onSubmit={handleSave} className="space-y-6 md:space-y-8">
         <div className="grid grid-cols-1 md:grid-cols-2 gap-5 md:gap-8">
-          <div className="space-y-4 md:space-y-5">
-            <div>
+          <div className="space-y-4 md:space-y-5 min-w-0">
+            <div className="relative min-w-0 w-full">
               <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                 ວັນທີ
               </label>
@@ -193,10 +206,11 @@ export default function FuelFormPage() {
                 required
                 value={formData.date}
                 onChange={handleChange}
-                className="w-full h-[40px] md:h-[48px] px-3 md:px-4 py-2 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 text-sm md:text-base"
+                className="block w-full min-w-full h-[40px] md:h-[48px] px-3 md:px-4 py-2.5 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 text-sm md:text-base box-border appearance-none m-0"
               />
             </div>
-            <div className="z-20 relative">
+
+            <div className="z-20 relative min-w-0 w-full">
               <SearchableSelect
                 label="ທະບຽນລົດ"
                 placeholder="-- ເລືອກ ຫຼື ພິມຄົ້ນຫາ --"
@@ -207,8 +221,9 @@ export default function FuelFormPage() {
                 }
               />
             </div>
+
             <div className="grid grid-cols-2 gap-3 md:gap-5 z-10 relative">
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                   ຈຳນວນ (ລິດ)
                 </label>
@@ -219,10 +234,10 @@ export default function FuelFormPage() {
                   required
                   value={formData.liters}
                   onChange={handleChange}
-                  className="w-full h-[40px] md:h-[48px] px-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50"
+                  className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 box-border"
                 />
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                   ລາຄາ/ລິດ (ກີບ)
                 </label>
@@ -232,11 +247,12 @@ export default function FuelFormPage() {
                   required
                   value={formData.pricePerLiter}
                   onChange={handleChange}
-                  className="w-full h-[40px] md:h-[48px] px-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50"
+                  className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 box-border"
                 />
               </div>
             </div>
-            <div className="bg-orange-50 p-4 md:p-6 rounded-xl border border-orange-100 shadow-inner space-y-3">
+
+            <div className="bg-orange-50 p-4 md:p-6 rounded-xl border border-orange-100 shadow-inner space-y-3 min-w-0">
               <div className="flex justify-between items-center text-xs md:text-sm">
                 <span className="text-gray-600 font-medium">
                   ລາຄາລວມ (Auto):
@@ -245,7 +261,7 @@ export default function FuelFormPage() {
                   {formatInteger(formData.totalPrice)} ກີບ
                 </span>
               </div>
-              <div>
+              <div className="min-w-0">
                 <label className="block text-xs md:text-sm font-black text-gray-800 mb-1">
                   ລາຄາຈ່າຍຈິງ (ກີບ)
                 </label>
@@ -255,7 +271,7 @@ export default function FuelFormPage() {
                   required
                   value={formData.actualPaid}
                   onChange={handleChange}
-                  className="w-full h-[48px] px-3 border-2 border-orange-300 rounded-lg focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none font-bold text-lg text-orange-600"
+                  className="w-full h-[48px] md:h-[56px] px-3 md:px-4 border-2 border-orange-300 rounded-lg focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none font-bold text-lg md:text-xl text-orange-600 box-border"
                 />
               </div>
               <div className="flex justify-between items-center text-xs md:text-sm pt-2 border-t border-orange-200">
@@ -272,8 +288,8 @@ export default function FuelFormPage() {
             </div>
           </div>
 
-          <div className="space-y-4 md:space-y-5">
-            <div>
+          <div className="space-y-4 md:space-y-5 min-w-0">
+            <div className="min-w-0">
               <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1">
                 ເລກຫຼັກລົດ (ກມ.)
               </label>
@@ -283,24 +299,27 @@ export default function FuelFormPage() {
                 required
                 value={formData.odometer}
                 onChange={handleChange}
-                className="w-full h-[40px] md:h-[48px] px-3 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50"
+                className="w-full min-w-0 h-[40px] md:h-[48px] px-3 md:px-4 border border-gray-300 rounded-lg outline-none focus:ring-2 focus:ring-orange-500 bg-gray-50 box-border"
               />
             </div>
+
             <div className="bg-blue-50 p-4 md:p-6 rounded-xl border border-blue-100 space-y-2 shadow-inner">
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-medium text-xs md:text-sm">
                   ໄລຍະທາງຫຼັງເຕີມລ່າສຸດ:
                 </span>
-                <span className="text-lg font-black text-blue-600">
-                  {formatNumber(formData.distance)} ກມ.
+                <span className="text-lg md:text-xl font-black text-blue-600">
+                  {formatNumber(formData.distance)}{" "}
+                  <span className="text-xs font-normal">ກມ.</span>
                 </span>
               </div>
               <div className="flex justify-between items-center">
                 <span className="text-gray-600 font-medium text-xs md:text-sm">
                   ອັດຕາສິ້ນເປືອງ:
                 </span>
-                <span className="text-lg font-black text-blue-600">
-                  {formatNumber(formData.consumption)} ກມ./ລິດ
+                <span className="text-lg md:text-xl font-black text-blue-600">
+                  {formatNumber(formData.consumption)}{" "}
+                  <span className="text-xs font-normal">ກມ./ລິດ</span>
                 </span>
               </div>
             </div>
@@ -308,16 +327,23 @@ export default function FuelFormPage() {
             <div className="grid grid-cols-2 gap-3 md:gap-5 pt-2">
               <div className="border-2 border-dashed border-gray-300 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition relative overflow-hidden group h-28 md:h-40 flex flex-col justify-center items-center cursor-pointer bg-gray-50">
                 {formData.receiptUrl ? (
-                  <div className="absolute inset-0 z-10">
+                  <div className="absolute inset-0 w-full h-full z-10">
+                    {/* ແກ້ໄຂ: ເອີ້ນໃຊ້ getPreviewUrl ກ່ອນສະແດງຜົນຮູບ */}
                     <img
-                      src={formData.receiptUrl}
+                      src={getPreviewUrl(formData.receiptUrl)}
                       className="w-full h-full object-cover"
-                      alt="Receipt"
+                      alt="Receipt Preview"
                     />
+                    <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <span className="text-white font-bold px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm bg-black bg-opacity-60 rounded-lg md:rounded-xl backdrop-blur-sm flex items-center space-x-1.5 md:space-x-2">
+                        <Edit className="w-3 h-3 md:w-4 h-4" />{" "}
+                        <span>ປ່ຽນຮູບ</span>
+                      </span>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center p-3 text-center">
-                    <ImageIcon className="w-6 h-6 text-orange-400 mb-2" />
+                  <div className="flex flex-col items-center p-3 text-center z-0">
+                    <ImageIcon className="w-6 h-6 md:w-8 md:h-8 text-orange-400 mb-2" />
                     <span className="text-xs md:text-sm font-bold text-gray-700">
                       ອັບໂຫຼດ ຮູບບິນ
                     </span>
@@ -327,21 +353,29 @@ export default function FuelFormPage() {
                   type="file"
                   accept="image/*"
                   onChange={(e) => handleImageUpload(e, "receipt")}
-                  className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                 />
               </div>
+
               <div className="border-2 border-dashed border-gray-300 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition relative overflow-hidden group h-28 md:h-40 flex flex-col justify-center items-center cursor-pointer bg-gray-50">
                 {formData.odometerUrl ? (
-                  <div className="absolute inset-0 z-10">
+                  <div className="absolute inset-0 w-full h-full z-10">
+                    {/* ແກ້ໄຂ: ເອີ້ນໃຊ້ getPreviewUrl ກ່ອນສະແດງຜົນຮູບ */}
                     <img
-                      src={formData.odometerUrl}
+                      src={getPreviewUrl(formData.odometerUrl)}
                       className="w-full h-full object-cover"
-                      alt="Odometer"
+                      alt="Odometer Preview"
                     />
+                    <div className="absolute inset-0 bg-black bg-opacity-40 flex items-center justify-center opacity-0 group-hover:opacity-100 transition-opacity duration-300">
+                      <span className="text-white font-bold px-3 py-1.5 md:px-4 md:py-2 text-xs md:text-sm bg-black bg-opacity-60 rounded-lg md:rounded-xl backdrop-blur-sm flex items-center space-x-1.5 md:space-x-2">
+                        <Edit className="w-3 h-3 md:w-4 h-4" />{" "}
+                        <span>ປ່ຽນຮູບ</span>
+                      </span>
+                    </div>
                   </div>
                 ) : (
-                  <div className="flex flex-col items-center p-3 text-center">
-                    <ImageIcon className="w-6 h-6 text-orange-400 mb-2" />
+                  <div className="flex flex-col items-center p-3 text-center z-0">
+                    <ImageIcon className="w-6 h-6 md:w-8 md:h-8 text-orange-400 mb-2" />
                     <span className="text-xs md:text-sm font-bold text-gray-700">
                       ອັບໂຫຼດ ຮູບເລກກິໂລ
                     </span>
@@ -351,7 +385,7 @@ export default function FuelFormPage() {
                   type="file"
                   accept="image/*"
                   onChange={(e) => handleImageUpload(e, "odometer")}
-                  className="absolute inset-0 opacity-0 cursor-pointer z-20"
+                  className="absolute inset-0 w-full h-full opacity-0 cursor-pointer z-20"
                 />
               </div>
             </div>
