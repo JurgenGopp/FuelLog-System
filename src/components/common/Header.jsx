@@ -1,12 +1,10 @@
 // src/components/common/Header.jsx
 import React, { useState, useEffect } from "react";
 import { useLocation } from "react-router-dom";
-import { Menu, User, Calendar } from "lucide-react";
-import { useAuth } from "../../contexts/AuthContext";
+import { Menu, Calendar } from "lucide-react";
 
 export default function Header({ setSidebarOpen }) {
   const location = useLocation();
-  const { user } = useAuth();
   const [currentDate, setCurrentDate] = useState("");
 
   // ດຶງວັນທີປັດຈຸບັນມາສະແດງ (Format: DD/MM/YYYY)
@@ -55,23 +53,11 @@ export default function Header({ setSidebarOpen }) {
       </div>
 
       <div className="flex items-center gap-3 md:gap-4">
-        {/* ສ່ວນທີ່ສະແດງວັນທີ */}
+        {/* ສ່ວນທີ່ສະແດງວັນທີພຽງຢ່າງດຽວ */}
         <div className="flex items-center gap-1.5 bg-orange-600/50 border border-orange-400/50 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium shadow-inner">
           <Calendar size={16} className="text-orange-100" />
           <span className="hidden sm:inline text-orange-50">ວັນທີ: </span>
           <span className="font-bold">{currentDate}</span>
-        </div>
-
-        {/* ສ່ວນສະແດງຂໍ້ມູນຜູ້ໃຊ້ */}
-        <div className="hidden md:flex flex-col items-end border-l border-orange-400 pl-4 ml-1">
-          <span className="text-sm font-bold">{user?.name || "ພະນັກງານ"}</span>
-          <span className="text-[10px] bg-orange-600 px-2 py-0.5 rounded-full uppercase tracking-wider mt-0.5">
-            {user?.role || "user"}
-          </span>
-        </div>
-
-        <div className="w-8 h-8 md:w-10 md:h-10 bg-white text-orange-500 rounded-full flex items-center justify-center font-bold shadow-inner">
-          <User size={20} />
         </div>
       </div>
     </header>
