@@ -4,6 +4,7 @@ import { useNavigate, useParams } from "react-router-dom";
 import { Droplet, Edit, ImageIcon, AlertCircle } from "lucide-react";
 import { callApi } from "../api/config";
 import { useAuth } from "../contexts/AuthContext";
+import { useAlert } from "../contexts/AlertContext"; // <-- 1. Import useAlert
 import {
   getLaosDateString,
   formatInteger,
@@ -13,17 +14,12 @@ import {
 } from "../utils/helpers";
 import SearchableSelect from "../components/common/SearchableSelect";
 
-// --- Helper: ແປງ Google Drive Link ໃຫ້ເປັນ Thumbnail Link ---
 const getPreviewUrl = (url) => {
   if (!url) return "";
-  // ຖ້າເປັນຮູບທີ່ອັບໂຫຼດໃໝ່ (Base64) ໃຫ້ສະແດງເລີຍ
   if (url.startsWith("data:image") || url.startsWith("blob:")) return url;
-
-  // ດຶງເອົາ ID ຂອງ Google Drive ອອກມາ
   const driveMatch = url.match(/[-\w]{25,}/);
   if (driveMatch && url.includes("google")) {
     const fileId = driveMatch[0];
-    // ເພີ່ມ timestamp ຕໍ່ທ້າຍເພື່ອບັງຄັບໃຫ້ Browser ໂຫຼດໃໝ່ທຸກຄັ້ງ (ປ້ອງກັນ Caching issues ທີ່ເຮັດໃຫ້ຮູບອອກບໍ່ຄົບ)
     return `https://drive.google.com/thumbnail?id=${fileId}&sz=w800-h800&t=${new Date().getTime()}`;
   }
   return url;
@@ -34,12 +30,15 @@ export default function FuelFormPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
+  // --- 2. ເອີ້ນໃຊ້ຟັງຊັ໋ນແຈ້ງເຕືອນ ພ້ອມລະບົບປ້ອງກັນ ---
+  const alertContext = useAlert();
+  const showAlert = alertContext?.showAlert || ((msg) => alert(msg));
+
   const [cars, setCars] = useState([]);
   const [allLogs, setAllLogs] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
   const [isSaving, setIsSaving] = useState(false);
 
-  // State ສຳລັບຈັບ Error ແຍກກັນຊັດເຈນ
   const [receiptError, setReceiptError] = useState(false);
   const [odometerError, setOdometerError] = useState(false);
 
@@ -61,38 +60,44 @@ export default function FuelFormPage() {
   useEffect(() => {
     const loadData = async () => {
       setIsLoading(true);
-      const res = await callApi({ action: "getData" });
-      if (res.success) {
-        const visibleCars =
-          user?.role === "admin"
-            ? res.cars
-            : res.cars.filter((c) => user?.assignedCars?.includes(c));
-        const visibleLogs =
-          user?.role === "admin"
-            ? res.logs
-            : res.logs.filter((l) =>
-                user?.assignedCars?.includes(l.licensePlate),
-              );
-        setCars(visibleCars || []);
-        setAllLogs(visibleLogs || []);
+      try {
+        const res = await callApi({ action: "getData" });
+        if (res.success) {
+          const visibleCars =
+            user?.role === "admin"
+              ? res.cars
+              : res.cars.filter((c) => user?.assignedCars?.includes(c));
+          const visibleLogs =
+            user?.role === "admin"
+              ? res.logs
+              : res.logs.filter((l) =>
+                  user?.assignedCars?.includes(l.licensePlate),
+                );
+          setCars(visibleCars || []);
+          setAllLogs(visibleLogs || []);
 
-        if (id) {
-          const logToEdit = visibleLogs.find(
-            (l) => String(l.id) === String(id),
-          );
-          if (logToEdit) {
-            setFormData({
-              ...logToEdit,
-              date: getLaosDateString(logToEdit.date),
-            });
-            // Reset errors ເມື່ອໂຫຼດຂໍ້ມູນສຳເລັດ
-            setReceiptError(false);
-            setOdometerError(false);
-          } else {
-            alert("ບໍ່ພົບຂໍ້ມູນທີ່ຕ້ອງການແກ້ໄຂ!");
-            navigate("/fuel/history");
+          if (id) {
+            const logToEdit = visibleLogs.find(
+              (l) => String(l.id) === String(id),
+            );
+            if (logToEdit) {
+              setFormData({
+                ...logToEdit,
+                date: getLaosDateString(logToEdit.date),
+              });
+              setReceiptError(false);
+              setOdometerError(false);
+            } else {
+              // --- 3. ປ່ຽນການແຈ້ງເຕືອນເປັນ showAlert ---
+              showAlert("ບໍ່ພົບຂໍ້ມູນທີ່ຕ້ອງການແກ້ໄຂ!", "error");
+              navigate("/fuel/history");
+            }
           }
+        } else {
+          showAlert("ບໍ່ສາມາດດຶງຂໍ້ມູນໄດ້: " + res.message, "error");
         }
+      } catch (error) {
+        showAlert("ເກີດຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່ລະບົບ", "error");
       }
       setIsLoading(false);
     };
@@ -140,7 +145,6 @@ export default function FuelFormPage() {
           ...prev,
           [`${fieldPrefix}Url`]: reader.result,
         }));
-        // ລ້າງ Error ເມື່ອມີການອັບໂຫຼດຮູບໃໝ່
         if (fieldPrefix === "receipt") setReceiptError(false);
         if (fieldPrefix === "odometer") setOdometerError(false);
       };
@@ -177,15 +181,23 @@ export default function FuelFormPage() {
       createdBy: isEdit ? formData.createdBy : user.name,
     };
 
-    const res = await callApi({
-      action: isEdit ? "editLog" : "addLog",
-      data: payloadData,
-    });
-
-    if (res.success !== false) {
-      navigate("/fuel/history");
-    } else {
-      alert("ບັນທຶກຂໍ້ມູນບໍ່ສຳເລັດ: " + res.message);
+    try {
+      const res = await callApi({
+        action: isEdit ? "editLog" : "addLog",
+        data: payloadData,
+      });
+      if (res.success !== false) {
+        // --- 4. ແຈ້ງເຕືອນສຳເລັດກ່ອນປ່ຽນໜ້າ ---
+        showAlert(
+          isEdit ? "ແກ້ໄຂຂໍ້ມູນສຳເລັດ" : "ບັນທຶກຂໍ້ມູນສຳເລັດ",
+          "success",
+        );
+        navigate("/fuel/history");
+      } else {
+        showAlert("ບັນທຶກຂໍ້ມູນບໍ່ສຳເລັດ: " + res.message, "error");
+      }
+    } catch (error) {
+      showAlert("ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກຂໍ້ມູນ", "error");
     }
     setIsSaving(false);
   };
@@ -337,7 +349,6 @@ export default function FuelFormPage() {
             </div>
 
             <div className="grid grid-cols-2 gap-3 md:gap-5 pt-2">
-              {/* ຮູບບິນ */}
               <div className="border-2 border-dashed border-gray-300 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition relative overflow-hidden group h-28 md:h-40 flex flex-col justify-center items-center cursor-pointer bg-gray-50">
                 {formData.receiptUrl ? (
                   <div className="absolute inset-0 w-full h-full z-10 flex items-center justify-center bg-gray-100">
@@ -382,7 +393,6 @@ export default function FuelFormPage() {
                 />
               </div>
 
-              {/* ຮູບເລກກິໂລ */}
               <div className="border-2 border-dashed border-gray-300 rounded-xl hover:border-orange-400 hover:bg-orange-50 transition relative overflow-hidden group h-28 md:h-40 flex flex-col justify-center items-center cursor-pointer bg-gray-50">
                 {formData.odometerUrl ? (
                   <div className="absolute inset-0 w-full h-full z-10 flex items-center justify-center bg-gray-100">

@@ -6,16 +6,14 @@ import {
   ChevronDown,
   ChevronUp,
   List as ListIcon,
-  ExternalLink,
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
   Calendar,
-  Car,
   Droplet,
-  DollarSign,
   MapPin,
   Image as ImageIcon,
+  BarChart2,
 } from "lucide-react";
 import { callApi } from "../api/config";
 import { useAuth } from "../contexts/AuthContext";
@@ -42,6 +40,9 @@ export default function FuelReport() {
     direction: "desc",
   });
   const [expandedGroup, setExpandedGroup] = useState(null);
+
+  // State ສຳລັບຄວບຄຸມການຈັດກຸ່ມຂອງກາຟ (Drill Up/Down)
+  const [chartGroupBy, setChartGroupBy] = useState("month");
 
   const loadData = async () => {
     setIsLoading(true);
@@ -82,29 +83,54 @@ export default function FuelReport() {
     return true;
   });
 
+  // --- ອັບເດດການຄຳນວນກາຟ ---
   const chartData = useMemo(() => {
-    let isDayGrouping = false;
-    if (startDate && endDate) {
-      const start = new Date(startDate);
-      const end = new Date(endDate);
-      if (Math.ceil(Math.abs(end - start) / (1000 * 60 * 60 * 24)) <= 31)
-        isDayGrouping = true;
-    } else if (startDate || endDate) {
-      isDayGrouping = true;
-    }
-
     const grouped = {};
     filteredLogs.forEach((log) => {
       const localDateStr = getLaosDateString(log.date);
       if (!localDateStr) return;
+      const d = new Date(localDateStr);
 
       let key = localDateStr;
       let label = formatDateDisplay(localDateStr).substring(0, 5);
 
-      if (!isDayGrouping) {
-        key = localDateStr.substring(0, 7);
+      if (chartGroupBy === "day") {
+        key = localDateStr; // YYYY-MM-DD
+        label = formatDateDisplay(localDateStr).substring(0, 5); // DD/MM
+      } else if (chartGroupBy === "week") {
+        // ຄຳນວນເລກອາທິດ (ISO Week) ເຊັ່ນ 202601
+        const dateObj = new Date(d);
+        dateObj.setHours(0, 0, 0, 0);
+        // ກຳນົດໃຫ້ເປັນວັນພະຫັດຂອງອາທິດນັ້ນ ເພື່ອໃຫ້ປີຕົກຖືກຕ້ອງ
+        dateObj.setDate(dateObj.getDate() + 3 - ((dateObj.getDay() + 6) % 7));
+        const week1 = new Date(dateObj.getFullYear(), 0, 4);
+        const weekNum =
+          1 +
+          Math.round(
+            ((dateObj.getTime() - week1.getTime()) / 86400000 -
+              3 +
+              ((week1.getDay() + 6) % 7)) /
+              7,
+          );
+
+        const year = dateObj.getFullYear();
+        const weekStr = weekNum.toString().padStart(2, "0");
+
+        key = `${year}${weekStr}`;
+        label = `${year}${weekStr}`; // ສະແດງເປັນ: 202601
+      } else if (chartGroupBy === "month") {
+        key = localDateStr.substring(0, 7); // YYYY-MM
         const [y, m] = key.split("-");
-        label = `${m}/${y}`;
+        label = `${m}/${y}`; // MM/YYYY
+      } else if (chartGroupBy === "quarter") {
+        // ຄຳນວນໄຕມາດ 1, 2, 3, 4
+        const year = d.getFullYear();
+        const q = Math.floor(d.getMonth() / 3) + 1;
+        key = `${year}Q${q}`;
+        label = `Q${q}/${year}`; // ສະແດງເປັນ: Q1/2026
+      } else if (chartGroupBy === "year") {
+        key = localDateStr.substring(0, 4); // YYYY
+        label = key; // YYYY
       }
 
       if (!grouped[key]) {
@@ -120,14 +146,14 @@ export default function FuelReport() {
       }
 
       const l = Number(log.liters || 0);
-      const d = Number(log.distance || 0);
+      const dVal = Number(log.distance || 0);
       const p = Number(log.actualPaid || 0);
       const plate = log.licensePlate || "ບໍ່ລະບຸ";
 
       grouped[key].liters += l;
       grouped[key].actualPaid += p;
-      if (d > 0) {
-        grouped[key].distance += d;
+      if (dVal > 0) {
+        grouped[key].distance += dVal;
         grouped[key].validLiters += l;
       }
 
@@ -149,7 +175,7 @@ export default function FuelReport() {
             ? Number((item.distance / item.validLiters).toFixed(2))
             : 0,
       }));
-  }, [filteredLogs, startDate, endDate]);
+  }, [filteredLogs, chartGroupBy]);
 
   const reportData = useMemo(() => {
     const summary = {};
@@ -348,13 +374,50 @@ export default function FuelReport() {
           </div>
         </div>
 
-        {/* --- Chart --- */}
+        {/* --- Chart ພ້ອມປຸ່ມ Drill Up / Drill Down --- */}
         {filteredLogs.length > 0 && (
           <div className="bg-gray-50/50 p-4 md:p-6 rounded-xl border border-gray-100 mb-6">
-            <h4 className="text-xs md:text-base font-bold text-gray-800 mb-4 flex items-center">
-              <Activity className="w-4 h-4 mr-2 text-orange-500" />{" "}
-              ກາຟສະແດງຄ່ານ້ຳມັນລວມ ແລະ ປະລິມານນ້ຳມັນ (ຕາມການຄົ້ນຫາ)
-            </h4>
+            <div className="flex flex-col md:flex-row md:items-center justify-between gap-3 mb-4">
+              <h4 className="text-sm md:text-base font-bold text-gray-800 flex items-center">
+                <BarChart2 className="w-5 h-5 mr-2 text-orange-500" />{" "}
+                ກາຟສະແດງຄ່ານ້ຳມັນລວມ
+              </h4>
+
+              {/* --- ປຸ່ມເລືອກຮູບແບບກາຟ --- */}
+              <div className="flex bg-gray-200/60 p-1 rounded-xl w-full md:w-auto overflow-x-auto hide-scrollbar shrink-0">
+                <button
+                  onClick={() => setChartGroupBy("day")}
+                  className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${chartGroupBy === "day" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  ລາຍວັນ
+                </button>
+                <button
+                  onClick={() => setChartGroupBy("week")}
+                  className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${chartGroupBy === "week" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  ອາທິດ
+                </button>
+                <button
+                  onClick={() => setChartGroupBy("month")}
+                  className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${chartGroupBy === "month" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  ລາຍເດືອນ
+                </button>
+                <button
+                  onClick={() => setChartGroupBy("quarter")}
+                  className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${chartGroupBy === "quarter" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  ໄຕມາດ
+                </button>
+                <button
+                  onClick={() => setChartGroupBy("year")}
+                  className={`flex-1 md:flex-none px-3 md:px-4 py-1.5 md:py-2 text-[10px] md:text-xs font-bold rounded-lg transition-all ${chartGroupBy === "year" ? "bg-white text-orange-600 shadow-sm" : "text-gray-500 hover:text-gray-700"}`}
+                >
+                  ລາຍປີ
+                </button>
+              </div>
+            </div>
+
             <FuelChart
               data={chartData}
               barKey="actualPaid"

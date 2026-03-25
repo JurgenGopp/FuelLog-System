@@ -2,6 +2,7 @@
 import React from "react";
 import { BrowserRouter, Routes, Route, Navigate } from "react-router-dom";
 import { AuthProvider, useAuth } from "./contexts/AuthContext";
+import { AlertProvider } from "./contexts/AlertContext";
 
 // ໂຫຼດ Layouts
 import AuthLayout from "./layouts/AuthLayout";
@@ -61,119 +62,121 @@ const RootRedirect = () => {
 export default function App() {
   return (
     <AuthProvider>
-      <BrowserRouter>
-        <Routes>
-          <Route element={<AuthLayout />}>
-            <Route path="/login" element={<Login />} />
-          </Route>
-
-          <Route
-            element={
-              <ProtectedRoute>
-                <MainLayout />
-              </ProtectedRoute>
-            }
-          >
-            {/* --- ແກ້ໄຂ: ໃຊ້ RootRedirect ແທນການ Redirect ໄປ Dashboard ຕາຍຕົວ --- */}
-            <Route path="/" element={<RootRedirect />} />
+      <AlertProvider>
+        <BrowserRouter>
+          <Routes>
+            <Route element={<AuthLayout />}>
+              <Route path="/login" element={<Login />} />
+            </Route>
 
             <Route
-              path="/dashboard"
               element={
-                <ProtectedRoute requiredMenu="dashboard">
-                  <Dashboard />
+                <ProtectedRoute>
+                  <MainLayout />
                 </ProtectedRoute>
               }
-            />
+            >
+              {/* --- ແກ້ໄຂ: ໃຊ້ RootRedirect ແທນການ Redirect ໄປ Dashboard ຕາຍຕົວ --- */}
+              <Route path="/" element={<RootRedirect />} />
 
-            <Route
-              path="/fuel/history"
-              element={
-                <ProtectedRoute requiredMenu="list">
-                  <FuelList />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/fuel/add"
-              element={
-                <ProtectedRoute requiredMenu="form">
-                  <FuelFormPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/fuel/edit/:id"
-              element={
-                <ProtectedRoute requiredMenu="form">
-                  <FuelFormPage />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/fuel/report"
-              element={
-                <ProtectedRoute requiredMenu="report">
-                  <FuelReport />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/dashboard"
+                element={
+                  <ProtectedRoute requiredMenu="dashboard">
+                    <Dashboard />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/users"
-              element={
-                <ProtectedRoute requiredMenu="users">
-                  <UserManagement />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/fuel/history"
+                element={
+                  <ProtectedRoute requiredMenu="list">
+                    <FuelList />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/fuel/add"
+                element={
+                  <ProtectedRoute requiredMenu="form">
+                    <FuelFormPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/fuel/edit/:id"
+                element={
+                  <ProtectedRoute requiredMenu="form">
+                    <FuelFormPage />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/fuel/report"
+                element={
+                  <ProtectedRoute requiredMenu="report">
+                    <FuelReport />
+                  </ProtectedRoute>
+                }
+              />
 
-            <Route
-              path="/location/map"
-              element={
-                <ProtectedRoute requiredMenu="locationMap">
-                  <MapView />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/location/list"
-              element={
-                <ProtectedRoute requiredMenu="locationList">
-                  <ListView />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/location/add"
-              element={
-                <ProtectedRoute requiredMenu="locationForm">
-                  <FormView />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/location/edit"
-              element={
-                <ProtectedRoute requiredMenu="locationForm">
-                  <FormView />
-                </ProtectedRoute>
-              }
-            />
-            <Route
-              path="/location/route"
-              element={
-                <ProtectedRoute requiredMenu="locationRoute">
-                  <RoutePlanner />
-                </ProtectedRoute>
-              }
-            />
+              <Route
+                path="/users"
+                element={
+                  <ProtectedRoute requiredMenu="users">
+                    <UserManagement />
+                  </ProtectedRoute>
+                }
+              />
 
-            {/* ຖ້າພິມ URL ມົ້ວ ໃຫ້ໃຊ້ RootRedirect */}
-            <Route path="*" element={<RootRedirect />} />
-          </Route>
-        </Routes>
-      </BrowserRouter>
+              <Route
+                path="/location/map"
+                element={
+                  <ProtectedRoute requiredMenu="locationMap">
+                    <MapView />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/location/list"
+                element={
+                  <ProtectedRoute requiredMenu="locationList">
+                    <ListView />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/location/add"
+                element={
+                  <ProtectedRoute requiredMenu="locationForm">
+                    <FormView />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/location/edit"
+                element={
+                  <ProtectedRoute requiredMenu="locationForm">
+                    <FormView />
+                  </ProtectedRoute>
+                }
+              />
+              <Route
+                path="/location/route"
+                element={
+                  <ProtectedRoute requiredMenu="locationRoute">
+                    <RoutePlanner />
+                  </ProtectedRoute>
+                }
+              />
+
+              {/* ຖ້າພິມ URL ມົ້ວ ໃຫ້ໃຊ້ RootRedirect */}
+              <Route path="*" element={<RootRedirect />} />
+            </Route>
+          </Routes>
+        </BrowserRouter>
+      </AlertProvider>
     </AuthProvider>
   );
 }

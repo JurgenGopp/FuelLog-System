@@ -4,10 +4,16 @@ import { useNavigate } from "react-router-dom";
 import { Search, X, RefreshCw, Plus, LocateFixed } from "lucide-react";
 import { LOCATION_GAS_URL, GOOGLE_MAPS_API_KEY } from "../../api/config";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAlert } from "../../contexts/AlertContext";
 
 export default function MapView() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // ເອີ້ນໃຊ້ Alert ສຳລັບແຈ້ງເຕືອນ
+  const alertContext = useAlert();
+  const showAlert = alertContext?.showAlert || ((msg) => alert(msg));
+
   const [customers, setCustomers] = useState([]);
   const [search, setSearch] = useState("");
   const [scriptLoaded, setScriptLoaded] = useState(false);
@@ -20,15 +26,40 @@ export default function MapView() {
   const infoWindowRef = useRef(null);
   const userMarkerRef = useRef(null);
 
-  // --- ເພີ່ມ CSS ສຳລັບຫຍໍ້ຂະໜາດປຸ່ມເລືອກປະເພດແຜນທີ່ ---
+  // --- 1. ສ້າງ Global Function ສຳລັບປຸ່ມ Copy ລິ້ງໃນແຜນທີ່ ---
+  useEffect(() => {
+    window.handleCopyMapLink = (link) => {
+      navigator.clipboard.writeText(link).then(() => {
+        showAlert("ກັອບປີ້ລິ້ງສຳເລັດແລ້ວ!", "success");
+      });
+    };
+    // ລຶບ function ຖິ້ມເມື່ອປິດໜ້າຈໍ ເພື່ອບໍ່ໃຫ້ໜັກເຄື່ອງ
+    return () => {
+      delete window.handleCopyMapLink;
+    };
+  }, [showAlert]);
+
+  // --- 2. ແກ້ໄຂ CSS ຂອງ Google Maps ເພື່ອລຶບຊ່ອງວ່າງດ້ານເທິງ ---
   useEffect(() => {
     const style = document.createElement("style");
     style.innerHTML = `
       .gmnoprint.gm-style-mtc {
-        transform: scale(0.85); /* ຫຍໍ້ຂະໜາດລົງ 15% */
+        transform: scale(0.85);
         transform-origin: top left;
         margin-top: 5px !important;
         margin-left: 5px !important;
+      }
+      /* ບັງຄັບແກ້ໄຂຂອບ ແລະ ຊ່ອງວ່າງຂອງ Popup Google Maps */
+      .gm-style-iw.gm-style-iw-c {
+        padding: 14px 14px 10px 14px !important;
+        border-radius: 12px !important;
+      }
+      .gm-style-iw-d {
+        overflow: hidden !important;
+      }
+      /* ຍັບປຸ່ມ X (ປິດ) ໃຫ້ເຂົ້າຮູບ */
+      .gm-style-iw-tc {
+        display: none !important; /* ເຊື່ອງລູກສອນລຸ່ມ ຖ້າບໍ່ມັກ (ທາງເລືອກ) */
       }
     `;
     document.head.appendChild(style);
@@ -106,7 +137,7 @@ export default function MapView() {
         center: { lat: 17.9757, lng: 102.6331 },
         zoom: 12,
         mapTypeId: "hybrid",
-        gestureHandling: "greedy", // --- ແກ້ໄຂ: ອະນຸຍາດໃຫ້ໃຊ້ນິ້ວດຽວເລື່ອນແຜນທີ່ໄດ້ ---
+        gestureHandling: "greedy",
         disableDefaultUI: false,
         zoomControl: true,
         zoomControlOptions: {
@@ -156,6 +187,32 @@ export default function MapView() {
     const bounds = new window.google.maps.LatLngBounds();
     let hasValidPoints = false;
 
+    // ໝຸດສີສົ້ມເງົາງາມ (Glossy) 24x36
+    const storeIconSVG = {
+      url:
+        `data:image/svg+xml;charset=UTF-8,` +
+        encodeURIComponent(`
+        <svg xmlns="http://www.w3.org/2000/svg" viewBox="0 0 24 36" width="24" height="36">
+          <defs>
+            <linearGradient id="pinGrad" x1="0%" y1="0%" x2="100%" y2="100%">
+              <stop offset="0%" stop-color="#ff9d33" />
+              <stop offset="100%" stop-color="#d95d00" />
+            </linearGradient>
+            <radialGradient id="pinGlow" cx="30%" cy="30%" r="50%">
+              <stop offset="0%" stop-color="#ffffff" stop-opacity="0.65" />
+              <stop offset="100%" stop-color="#ffffff" stop-opacity="0" />
+            </radialGradient>
+          </defs>
+          <ellipse cx="12" cy="34" rx="7" ry="2" fill="rgba(0,0,0,0.3)" />
+          <path d="M12 1C5.9 1 1 5.9 1 12c0 8.4 11 23 11 23s11-14.6 11-23c0-6.1-4.9-11-11-11z" fill="url(#pinGrad)" stroke="#ffffff" stroke-width="1.5" />
+          <path d="M12 1C5.9 1 1 5.9 1 12c0 8.4 11 23 11 23s11-14.6 11-23c0-6.1-4.9-11-11-11z" fill="url(#pinGlow)" />
+          <circle cx="12" cy="12" r="3.5" fill="#ffffff" />
+        </svg>
+      `),
+      scaledSize: new window.google.maps.Size(24, 36),
+      anchor: new window.google.maps.Point(12, 36),
+    };
+
     filteredCustomers.forEach((c) => {
       const lat = parseFloat(c.lat);
       const lng = parseFloat(c.lng);
@@ -167,26 +224,33 @@ export default function MapView() {
           position: { lat, lng },
           map,
           title: c.customerName,
-          icon: {
-            path: window.google.maps.SymbolPath.CIRCLE,
-            fillColor: "#f97316",
-            fillOpacity: 1,
-            strokeWeight: 2,
-            strokeColor: "#ffffff",
-            scale: 10,
-          },
+          icon: storeIconSVG,
         });
 
         marker.addListener("click", () => {
+          const gmapsLink = `https://maps.google.com/?q=${lat},${lng}`;
+
+          // --- 3. ອັບເດດໂຄງສ້າງ HTML ໃຫ້ລົງແຖວ ແລະ ລຶບຊ່ອງວ່າງ ---
           const content = `
-            <div style="width: auto; max-width: 300px; font-family: 'Noto Sans Lao', sans-serif;">
-              <h3 style="font-size: 16px; font-weight: bold; margin-bottom: 4px; border-bottom: 1px solid #e2e8f0; padding-bottom: 4px; overflow-wrap: break-word;">${c.customerName}</h3>
-              <div style="font-size: 16px; color: #475569; margin-bottom: 8px; line-height: 1.5;">
-                <p style="margin: 2px 0;"><b>ລະຫັດ:</b> ${c.customerCode}</p>
-                <p style="margin: 2px 0;"><b>ເບີໂທ:</b> ${c.phone}</p>
-                <p style="margin: 2px 0;"><b>ສະຖານທີ່:</b> ບ.${c.village}, ມ.${c.district}, ຂ.${c.province}</p>
+            <div style="width: 220px; font-family: 'Noto Sans Lao', sans-serif; white-space: normal;">
+              <h3 style="font-size: 15px; font-weight: bold; margin: 0 0 8px 0; border-bottom: 1px solid #e2e8f0; padding-bottom: 6px; padding-right: 18px; line-height: 1.4; word-break: break-word;">
+                ${c.customerName}
+              </h3>
+              
+              <div style="font-size: 13px; color: #475569; margin-bottom: 12px; line-height: 1.5; word-break: break-word;">
+                <p style="margin: 3px 0;"><b>ລະຫັດ:</b> ${c.customerCode}</p>
+                <p style="margin: 3px 0;"><b>ເບີໂທ:</b> ${c.phone}</p>
+                <p style="margin: 3px 0;"><b>ສະຖານທີ່:</b> ບ.${c.village}, ມ.${c.district}, ຂ.${c.province}</p>
               </div>
-              <a href="https://www.google.com/maps/dir/?api=1&destination=${lat},${lng}" target="_blank" style="display: block; background: #f97316; color: white; text-align: center; padding: 8px 0; border-radius: 6px; text-decoration: none; font-weight: bold;">ນຳທາງ (Navigate)</a>
+              
+              <div style="display: flex; gap: 8px;">
+                <a href="${gmapsLink}" target="_blank" style="flex: 1; display: flex; align-items: center; justify-content: center; background: #f97316; color: white; padding: 8px 0; border-radius: 6px; text-decoration: none; font-weight: bold; font-size: 12px; box-shadow: 0 2px 4px rgba(249,115,22,0.3);">
+                  ນຳທາງ
+                </a>
+                <button onclick="window.handleCopyMapLink('${gmapsLink}')" style="flex: 1; display: flex; align-items: center; justify-content: center; background: #f1f5f9; color: #475569; border: 1px solid #cbd5e1; padding: 8px 0; border-radius: 6px; font-weight: bold; cursor: pointer; font-size: 12px; transition: all 0.2s;">
+                  ກັອບປີ້ລິ້ງ
+                </button>
+              </div>
             </div>
           `;
           infoWindowRef.current.setContent(content);
@@ -239,7 +303,8 @@ export default function MapView() {
             },
           });
         },
-        () => alert("ບໍ່ສາມາດດຶງທີ່ຢູ່ປັດຈຸບັນໄດ້. ກະລຸນາເປີດ GPS."),
+        () =>
+          showAlert("ບໍ່ສາມາດດຶງທີ່ຢູ່ປັດຈຸບັນໄດ້. ກະລຸນາເປີດ GPS.", "error"),
       );
     }
   };

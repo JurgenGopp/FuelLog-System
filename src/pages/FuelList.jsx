@@ -9,7 +9,6 @@ import {
   ArrowUpDown,
   ArrowUp,
   ArrowDown,
-  ExternalLink,
   RefreshCw,
   Calendar,
   Droplet,
@@ -18,6 +17,7 @@ import {
 } from "lucide-react";
 import { callApi } from "../api/config";
 import { useAuth } from "../contexts/AuthContext";
+import { useAlert } from "../contexts/AlertContext";
 import {
   formatDateDisplay,
   formatNumber,
@@ -29,6 +29,16 @@ import SearchableSelect from "../components/common/SearchableSelect";
 export default function FuelList() {
   const { user } = useAuth();
   const navigate = useNavigate();
+
+  // --- ແກ້ໄຂ Error ບ່ອນນີ້: ປ້ອງກັນເວັບລົ້ມ ຖ້າ App.jsx ຍັງບໍ່ໄດ້ໃສ່ AlertProvider ---
+  const alertContext = useAlert();
+  const showAlert = alertContext?.showAlert || ((msg) => alert(msg));
+  const showConfirm =
+    alertContext?.showConfirm ||
+    ((msg, onConfirm) => {
+      if (window.confirm(msg)) onConfirm();
+    });
+
   const [logs, setLogs] = useState([]);
   const [cars, setCars] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
@@ -42,24 +52,28 @@ export default function FuelList() {
 
   const loadData = async () => {
     setIsLoading(true);
-    const res = await callApi({ action: "getData" });
-    if (res.success) {
-      const visibleCars =
-        user?.role === "admin"
-          ? res.cars || []
-          : (res.cars || []).filter((c) =>
-              (user?.assignedCars || []).includes(c),
-            );
-      const visibleLogs =
-        user?.role === "admin"
-          ? res.logs || []
-          : (res.logs || []).filter((log) =>
-              (user?.assignedCars || []).includes(log.licensePlate),
-            );
-      setCars(visibleCars);
-      setLogs(visibleLogs);
-    } else {
-      alert("ບໍ່ສາມາດດຶງຂໍ້ມູນໄດ້: " + res.message);
+    try {
+      const res = await callApi({ action: "getData" });
+      if (res.success) {
+        const visibleCars =
+          user?.role === "admin"
+            ? res.cars || []
+            : (res.cars || []).filter((c) =>
+                (user?.assignedCars || []).includes(c),
+              );
+        const visibleLogs =
+          user?.role === "admin"
+            ? res.logs || []
+            : (res.logs || []).filter((log) =>
+                (user?.assignedCars || []).includes(log.licensePlate),
+              );
+        setCars(visibleCars);
+        setLogs(visibleLogs);
+      } else {
+        showAlert("ບໍ່ສາມາດດຶງຂໍ້ມູນໄດ້: " + res.message, "error");
+      }
+    } catch (error) {
+      showAlert("ເກີດຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່ລະບົບ", "error");
     }
     setIsLoading(false);
   };
@@ -68,17 +82,23 @@ export default function FuelList() {
     loadData();
   }, [user]);
 
-  const handleDelete = async (id) => {
-    if (window.confirm("ທ່ານຕ້ອງການລຶບຂໍ້ມູນການເຕີມນ້ຳມັນນີ້ແທ້ບໍ່?")) {
+  const handleDelete = (id) => {
+    showConfirm("ທ່ານຕ້ອງການລຶບຂໍ້ມູນການເຕີມນ້ຳມັນນີ້ແທ້ບໍ່?", async () => {
       setIsLoading(true);
-      const res = await callApi({ action: "deleteLog", id });
-      if (res.success !== false) {
-        setLogs(logs.filter((l) => l.id !== id));
-      } else {
-        alert("ລຶບຂໍ້ມູນບໍ່ສຳເລັດ: " + res.message);
+      try {
+        const res = await callApi({ action: "deleteLog", id });
+        if (res.success !== false) {
+          // --- ແກ້ໄຂ: ໃຊ້ Prev State ເພື່ອປ້ອງກັນຂໍ້ມູນເກົ່າຄ້າງ ---
+          setLogs((prevLogs) => prevLogs.filter((l) => l.id !== id));
+          showAlert("ລຶບຂໍ້ມູນສຳເລັດ", "success");
+        } else {
+          showAlert("ລຶບຂໍ້ມູນບໍ່ສຳເລັດ: " + res.message, "error");
+        }
+      } catch (error) {
+        showAlert("ເກີດຂໍ້ຜິດພາດໃນການລຶບຂໍ້ມູນ", "error");
       }
       setIsLoading(false);
-    }
+    });
   };
 
   const filteredLogs = logs.filter((log) => {
@@ -328,7 +348,6 @@ export default function FuelList() {
             >
               <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-400"></div>
 
-              {/* ຫົວຂໍ້: ທະບຽນລົດ ແລະ ວັນທີ */}
               <div className="flex justify-between items-start pl-2">
                 <div>
                   <h4 className="font-black text-gray-800 text-lg tracking-wide">
@@ -346,7 +365,6 @@ export default function FuelList() {
                 </div>
               </div>
 
-              {/* ລາຍລະອຽດການເຕີມ */}
               <div className="grid grid-cols-2 gap-2 pl-2 mt-1">
                 <div className="bg-gray-50/80 p-2.5 rounded-xl border border-gray-100">
                   <p className="text-[10px] text-gray-400 font-bold mb-0.5 flex items-center gap-1">
@@ -369,7 +387,6 @@ export default function FuelList() {
                 </div>
               </div>
 
-              {/* ປຸ່ມຮູບພາບ ແລະ ຈັດການ */}
               <div className="flex items-center justify-between mt-1 pt-3 border-t border-gray-100 pl-2">
                 <div className="flex gap-2">
                   {log.receiptUrl?.startsWith("http") ? (

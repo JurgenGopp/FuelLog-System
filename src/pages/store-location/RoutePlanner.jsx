@@ -10,10 +10,11 @@ import {
   ChevronDown,
   Wand2,
   Map as MapIcon,
+  Trash2,
 } from "lucide-react";
 import { LOCATION_GAS_URL, GOOGLE_MAPS_API_KEY } from "../../api/config";
+import { useAlert } from "../../contexts/AlertContext";
 
-// ສູດຄຳນວນໄລຍະທາງ (Haversine Formula) ເປັນກິໂລແມັດ
 const getDistance = (lat1, lon1, lat2, lon2) => {
   const R = 6371;
   const dLat = (lat2 - lat1) * (Math.PI / 180);
@@ -28,7 +29,6 @@ const getDistance = (lat1, lon1, lat2, lon2) => {
   return R * c;
 };
 
-// Component ສຳລັບ Dropdown ເລືອກຮ້ານຄ້າ
 const CustomerSelect = ({ value, onChange, options, placeholder }) => {
   const [isOpen, setIsOpen] = useState(false);
   const [searchTerm, setSearchTerm] = useState("");
@@ -60,11 +60,15 @@ const CustomerSelect = ({ value, onChange, options, placeholder }) => {
         <div className="flex-1 truncate pr-2">
           {value ? (
             <div className="flex flex-col">
-              <span className="text-sm font-bold text-gray-800 truncate">
+              <span
+                className={`text-sm font-bold truncate ${value.id === "CURRENT_LOCATION" ? "text-blue-600" : "text-gray-800"}`}
+              >
                 {value.customerName}
               </span>
               <span className="text-[10px] text-gray-500 truncate">
-                ລະຫັດ: {value.customerCode} | {value.village}, {value.district}
+                {value.id === "CURRENT_LOCATION"
+                  ? `ສະຖານະ: ${value.village}`
+                  : `ລະຫັດ: ${value.customerCode} | ${value.village}, ${value.district}`}
               </span>
             </div>
           ) : (
@@ -89,8 +93,8 @@ const CustomerSelect = ({ value, onChange, options, placeholder }) => {
       </div>
 
       {isOpen && (
-        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden">
-          <div className="p-2 border-b border-gray-100 bg-gray-50">
+        <div className="absolute z-50 w-full mt-1 bg-white border border-gray-200 rounded-xl shadow-xl overflow-hidden flex flex-col">
+          <div className="p-2 border-b border-gray-100 bg-gray-50 shrink-0">
             <input
               autoFocus
               className="w-full text-sm outline-none py-1.5 px-2 bg-white border border-gray-200 rounded-lg"
@@ -104,21 +108,31 @@ const CustomerSelect = ({ value, onChange, options, placeholder }) => {
               filteredOptions.map((opt) => (
                 <div
                   key={opt.id}
-                  className="px-3 py-2.5 border-b border-gray-50 hover:bg-orange-50 cursor-pointer"
+                  className={`px-3 py-2.5 border-b border-gray-50 cursor-pointer transition ${opt.id === "CURRENT_LOCATION" ? "bg-blue-50/50 hover:bg-blue-100" : "hover:bg-orange-50"}`}
                   onClick={() => {
                     onChange(opt);
                     setIsOpen(false);
                     setSearchTerm("");
                   }}
                 >
-                  <div className="font-bold text-sm text-gray-800">
+                  <div
+                    className={`font-bold text-sm ${opt.id === "CURRENT_LOCATION" ? "text-blue-600" : "text-gray-800"}`}
+                  >
                     {opt.customerName}
                   </div>
                   <div className="text-xs text-gray-500 flex justify-between">
                     <span>
-                      {opt.village}, {opt.district}
+                      {opt.id === "CURRENT_LOCATION"
+                        ? opt.village
+                        : `${opt.village}, ${opt.district}`}
                     </span>
-                    <span className="text-orange-600 font-bold">
+                    <span
+                      className={
+                        opt.id === "CURRENT_LOCATION"
+                          ? "text-blue-500 font-bold"
+                          : "text-orange-600 font-bold"
+                      }
+                    >
                       {opt.customerCode}
                     </span>
                   </div>
@@ -137,10 +151,19 @@ const CustomerSelect = ({ value, onChange, options, placeholder }) => {
 };
 
 export default function RoutePlanner() {
+  const alertContext = useAlert();
+  const showAlert = alertContext?.showAlert || ((msg) => alert(msg));
+  const showConfirm =
+    alertContext?.showConfirm ||
+    ((msg, onConfirm) => {
+      if (window.confirm(msg)) onConfirm();
+    });
+
   const [customers, setCustomers] = useState([]);
-  const [waypoints, setWaypoints] = useState([null, null]); // ເລີ່ມຕົ້ນດ້ວຍ 2 ຊ່ອງ
+  const [waypoints, setWaypoints] = useState([null, null]);
   const [isLoading, setIsLoading] = useState(true);
   const [userLocation, setUserLocation] = useState(null);
+  const [scriptLoaded, setScriptLoaded] = useState(false);
 
   const mapRef = useRef(null);
   const [map, setMap] = useState(null);
@@ -178,7 +201,7 @@ export default function RoutePlanner() {
               lng: lng || getVal(["lng"]),
             };
           })
-          .filter((c) => c.lat && c.lng); // ເອົາແຕ່ຮ້ານທີ່ມີພິກັດ
+          .filter((c) => c.lat && c.lng);
         setCustomers(mapped);
       } catch (err) {
         console.error("Fetch Error:", err);
@@ -188,32 +211,39 @@ export default function RoutePlanner() {
 
     fetchCustomers();
 
-    // ຂໍຕຳແໜ່ງປັດຈຸບັນ
     if (navigator.geolocation) {
-      navigator.geolocation.getCurrentPosition((pos) => {
-        setUserLocation({
-          lat: pos.coords.latitude,
-          lng: pos.coords.longitude,
-        });
-      });
+      navigator.geolocation.getCurrentPosition(
+        (pos) =>
+          setUserLocation({
+            lat: pos.coords.latitude,
+            lng: pos.coords.longitude,
+          }),
+        (err) => console.log("GPS Denied or Unavailable"),
+      );
     }
 
-    // Load Google Maps
-    if (!window.google) {
-      window.initMap = () => {};
-      const script = document.createElement("script");
-      script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&language=lo&region=LA&callback=initMap`;
-      script.async = true;
-      document.head.appendChild(script);
+    if (window.google && window.google.maps) {
+      setScriptLoaded(true);
+    } else {
+      window.initGoogleMapForRoute = () => setScriptLoaded(true);
+      const scriptId = "google-maps-script-route";
+      if (!document.getElementById(scriptId)) {
+        const script = document.createElement("script");
+        script.id = scriptId;
+        script.src = `https://maps.googleapis.com/maps/api/js?key=${GOOGLE_MAPS_API_KEY}&libraries=places&language=lo&region=LA&loading=async&callback=initGoogleMapForRoute`;
+        script.async = true;
+        document.head.appendChild(script);
+      }
     }
   }, []);
 
   useEffect(() => {
-    if (window.google && mapRef.current && !map) {
+    if (scriptLoaded && window.google && mapRef.current && !map) {
       const m = new window.google.maps.Map(mapRef.current, {
         center: { lat: 17.9757, lng: 102.6331 },
         zoom: 12,
-        disableDefaultUI: true,
+        mapTypeId: "hybrid",
+        disableDefaultUI: false,
         gestureHandling: "greedy",
       });
       const renderer = new window.google.maps.DirectionsRenderer({
@@ -223,11 +253,61 @@ export default function RoutePlanner() {
       setMap(m);
       setDirectionsRenderer(renderer);
     }
-  }, [mapRef, map]);
+  }, [scriptLoaded, mapRef, map]);
 
-  const updateWaypoint = (index, value) => {
+  const optionsWithLocation = [
+    {
+      id: "CURRENT_LOCATION",
+      customerName: "📍 ຕຳແໜ່ງປັດຈຸບັນ (My Location)",
+      customerCode: "GPS",
+      village: userLocation ? "ພ້ອມໃຊ້ງານ" : "ກົດເພື່ອດຶງຕຳແໜ່ງ...",
+      district: "",
+      lat: userLocation?.lat || "",
+      lng: userLocation?.lng || "",
+    },
+    ...customers,
+  ];
+
+  const handleWaypointChange = (index, val) => {
+    if (val && val.id === "CURRENT_LOCATION" && (!val.lat || !val.lng)) {
+      showAlert("ກຳລັງດຶງຕຳແໜ່ງປັດຈຸບັນ, ກະລຸນາລໍຖ້າ...", "warning");
+
+      if (navigator.geolocation) {
+        navigator.geolocation.getCurrentPosition(
+          (pos) => {
+            const coords = {
+              lat: pos.coords.latitude,
+              lng: pos.coords.longitude,
+            };
+            setUserLocation(coords);
+            const updatedVal = {
+              ...val,
+              lat: coords.lat,
+              lng: coords.lng,
+              village: "ພ້ອມໃຊ້ງານ",
+            };
+
+            const newWp = [...waypoints];
+            newWp[index] = updatedVal;
+            setWaypoints(newWp);
+
+            showAlert("ດຶງຕຳແໜ່ງປັດຈຸບັນສຳເລັດ", "success");
+          },
+          () =>
+            showAlert(
+              "ບໍ່ສາມາດດຶງຕຳແໜ່ງໄດ້. ກະລຸນາເປີດ GPS ໃນອຸປະກອນ.",
+              "error",
+            ),
+          { enableHighAccuracy: true },
+        );
+      } else {
+        showAlert("ອຸປະກອນຂອງທ່ານບໍ່ຮອງຮັບ GPS", "error");
+      }
+      return;
+    }
+
     const newWp = [...waypoints];
-    newWp[index] = value;
+    newWp[index] = val;
     setWaypoints(newWp);
   };
 
@@ -252,11 +332,23 @@ export default function RoutePlanner() {
     setWaypoints(newWp);
   };
 
-  // ຈັດລຽງ Auto ໂດຍເລີ່ມຈາກຮ້ານໃກ້ສຸດ (Greedy Nearest Neighbor)
+  const handleClearAll = () => {
+    const hasData = waypoints.some((wp) => wp !== null);
+    if (!hasData) return;
+
+    showConfirm("ທ່ານຕ້ອງການລ້າງລາຍຊື່ຮ້ານຄ້າທັງໝົດແທ້ບໍ່?", () => {
+      setWaypoints([null, null]);
+      if (directionsRenderer) {
+        directionsRenderer.setDirections({ routes: [] });
+      }
+      showAlert("ລ້າງລາຍຊື່ສຳເລັດ", "success");
+    });
+  };
+
   const handleAutoSort = () => {
     const validWps = waypoints.filter((wp) => wp !== null);
     if (validWps.length < 2)
-      return alert("ກະລຸນາເລືອກຢ່າງໜ້ອຍ 2 ຮ້ານກ່ອນຈັດລຽງ");
+      return showAlert("ກະລຸນາເລືອກຢ່າງໜ້ອຍ 2 ຈຸດກ່ອນຈັດລຽງ", "warning");
 
     let sorted = [];
     let remaining = [...validWps];
@@ -290,14 +382,15 @@ export default function RoutePlanner() {
       };
     }
 
-    while (sorted.length < waypoints.length) sorted.push(null); // ຮັກສາຈຳນວນຊ່ອງໃຫ້ເທົ່າເດີມ
+    while (sorted.length < waypoints.length) sorted.push(null);
     setWaypoints(sorted);
+    showAlert("ຈັດລຽງເສັ້ນທາງສຳເລັດ", "success");
   };
 
-  // ຄຳນວນເສັ້ນທາງໃນແຜນທີ່
   const handleCalculateRoute = () => {
     const validWps = waypoints.filter((wp) => wp !== null);
-    if (validWps.length < 2) return alert("ກະລຸນາເລືອກຢ່າງໜ້ອຍ 2 ຮ້ານ");
+    if (validWps.length < 2)
+      return showAlert("ກະລຸນາເລືອກຢ່າງໜ້ອຍ 2 ຈຸດ", "warning");
 
     const directionsService = new window.google.maps.DirectionsService();
     const origin = {
@@ -325,18 +418,18 @@ export default function RoutePlanner() {
         if (status === "OK") {
           directionsRenderer.setDirections(response);
         } else {
-          alert("ບໍ່ສາມາດຄຳນວນເສັ້ນທາງໄດ້. ລອງໃໝ່ອີກຄັ້ງ.");
+          showAlert("ບໍ່ສາມາດຄຳນວນເສັ້ນທາງໄດ້. ລອງໃໝ່ອີກຄັ້ງ.", "error");
         }
       },
     );
   };
 
-  // ເປີດນຳທາງໃນແອັບ Google Maps
   const handleOpenGoogleMaps = () => {
     const validWps = waypoints.filter((wp) => wp !== null);
-    if (validWps.length < 2) return alert("ກະລຸນາເລືອກຢ່າງໜ້ອຍ 2 ຮ້ານ");
+    if (validWps.length < 2)
+      return showAlert("ກະລຸນາເລືອກຢ່າງໜ້ອຍ 2 ຈຸດ", "warning");
 
-    let url = `https://www.google.com/maps/dir/?api=1&origin=${validWps[0].lat},${validWps[0].lng}&destination=${validWps[validWps.length - 1].lat},${validWps[validWps.length - 1].lng}`;
+    let url = `https://www.google.com/maps/dir/?api=1&origin=$${validWps[0].lat},${validWps[0].lng}&destination=${validWps[validWps.length - 1].lat},${validWps[validWps.length - 1].lng}`;
 
     if (validWps.length > 2) {
       const waypts = validWps
@@ -350,19 +443,28 @@ export default function RoutePlanner() {
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-100px)] gap-4 font-lao">
+    // --- ແກ້ໄຂ: ປ່ຽນຄວາມສູງເປັນ h-[calc(100vh-120px)] ເພື່ອໃຫ້ກ່ອງສັ້ນລົງ ---
+    <div className="flex flex-col lg:flex-row h-[calc(100vh-120px)] gap-4 font-lao mb-4">
       {/* ດ້ານຊ້າຍ: ກ່ອງຈັດການເສັ້ນທາງ */}
       <div className="w-full lg:w-[400px] bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full">
         <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-2xl">
           <h2 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
-            <Navigation className="text-orange-500" /> ຈັດການເສັ້ນທາງ
+            <Navigation className="text-orange-500" /> ຄົ້ນຫາເສັ້ນທາງ
           </h2>
-          <button
-            onClick={handleAutoSort}
-            className="text-xs bg-orange-100 text-orange-600 font-bold px-3 py-1.5 rounded-lg hover:bg-orange-200 transition flex items-center gap-1"
-          >
-            <Wand2 size={14} /> Auto Sort
-          </button>
+          <div className="flex gap-2">
+            <button
+              onClick={handleClearAll}
+              className="text-xs bg-red-50 text-red-600 font-bold px-3 py-1.5 rounded-lg hover:bg-red-100 transition flex items-center gap-1"
+            >
+              <Trash2 size={14} /> ລ້າງ
+            </button>
+            <button
+              onClick={handleAutoSort}
+              className="text-xs bg-orange-100 text-orange-600 font-bold px-3 py-1.5 rounded-lg hover:bg-orange-200 transition flex items-center gap-1"
+            >
+              <Wand2 size={14} /> ລຽງ Auto
+            </button>
+          </div>
         </div>
 
         <div className="flex-1 overflow-y-auto p-4 space-y-3 relative">
@@ -399,14 +501,10 @@ export default function RoutePlanner() {
               <div className="flex-1 min-w-0">
                 <CustomerSelect
                   value={wp}
-                  onChange={(val) => updateWaypoint(index, val)}
-                  options={customers}
+                  onChange={(val) => handleWaypointChange(index, val)}
+                  options={optionsWithLocation}
                   placeholder={
-                    index === 0
-                      ? "ເລືອກຈຸດເລີ່ມຕົ້ນ..."
-                      : index === waypoints.length - 1
-                        ? "ເລືອກຈຸດປາຍທາງ..."
-                        : "ເລືອກຈຸດແວ່..."
+                    index === 0 ? "ເລືອກຈຸດເລີ່ມຕົ້ນ..." : "ເລືອກຈຸດປາຍທາງ..."
                   }
                 />
               </div>
@@ -423,7 +521,7 @@ export default function RoutePlanner() {
             onClick={addWaypoint}
             className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold flex items-center justify-center gap-2 hover:bg-gray-50 hover:text-orange-500 hover:border-orange-300 transition mt-2"
           >
-            <Plus size={20} /> ເພີ່ມຈຸດແວ່
+            <Plus size={20} /> ເພີ່ມຈຸດປາຍທາງ
           </button>
         </div>
 

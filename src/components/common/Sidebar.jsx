@@ -15,16 +15,30 @@ import {
   Route,
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
+import { useAlert } from "../../contexts/AlertContext"; // <-- 1. Import useAlert ເຂົ້າມາ
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const { user, logout, hasAccess } = useAuth();
   const navigate = useNavigate();
 
+  // --- 2. ເອີ້ນໃຊ້ Alert Context ສຳລັບ Popup ແຈ້ງເຕືອນ ---
+  const alertContext = useAlert();
+  const showConfirm =
+    alertContext?.showConfirm ||
+    ((msg, onConfirm) => {
+      if (window.confirm(msg)) onConfirm();
+    });
+
+  // --- 3. ປ່ຽນຈາກ window.confirm ມາໃຊ້ showConfirm ຂອງເຮົາ ---
   const handleLogout = () => {
-    if (window.confirm("ທ່ານຕ້ອງການອອກຈາກລະບົບແທ້ບໍ່?")) {
-      logout();
-      navigate("/login");
-    }
+    showConfirm(
+      "ທ່ານຕ້ອງການອອກຈາກລະບົບແທ້ບໍ່?",
+      () => {
+        logout();
+        navigate("/login");
+      },
+      "warning",
+    ); // ໃຊ້ type "warning" ເພື່ອໃຫ້ໄອຄອນເປັນແນວແຈ້ງເຕືອນ
   };
 
   // ຟັງຊັ໋ນຊ່ວຍຈັດການ Class ຂອງ NavLink ເພື່ອສະແດງສີເມນູທີ່ຖືກເລືອກ
@@ -41,9 +55,11 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       } md:translate-x-0 md:static md:inset-0 flex flex-col font-lao`}
     >
-      <div className="flex items-center justify-between h-14 md:h-16 px-4 md:px-6 bg-orange-500 text-white flex-shrink-0 w-full">
+      {/* --- ແກ້ໄຂ: ປັບຄວາມສູງສ່ວນເທິງ Sidebar ໃຫ້ເປັນ h-16 ຢ່າງແນ່ນອນ --- */}
+      <div className="flex items-center justify-between h-16 px-4 md:px-6 bg-orange-500 text-white flex-shrink-0 w-full">
         <div className="flex items-center space-x-2 font-bold min-w-0 flex-1 pr-2">
           <span className="text-sm md:text-lg truncate">
+            {/* ອັບເດດຊື່ລະບົບຕາມທີ່ທ່ານຕັ້ງຄ່າ */}
             ລະບົບບັນທຶກການຕື່ມນ້ຳມັນ
           </span>
         </div>
@@ -110,7 +126,6 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
               <MapIcon className="w-4 h-4 md:w-5 md:h-5" />{" "}
               <span>ແຜນທີ່ຮ້ານຄ້າ</span>
             </NavLink>
-            {/* --- ເພີ່ມເມນູໃໝ່ບ່ອນນີ້ --- */}
             {hasAccess("locationRoute") && (
               <NavLink
                 to="/location/route"

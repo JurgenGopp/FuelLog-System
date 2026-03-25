@@ -16,18 +16,27 @@ import {
 } from "lucide-react";
 import { callApi } from "../api/config";
 import { useAuth } from "../contexts/AuthContext";
+import { useAlert } from "../contexts/AlertContext"; // <-- 1. Import useAlert
 import { generateUserId } from "../utils/helpers";
 
 export default function UserManagement() {
   const { user: currentUser } = useAuth();
+
+  // --- 2. ເອີ້ນໃຊ້ຟັງຊັ໋ນແຈ້ງເຕືອນ ພ້ອມລະບົບປ້ອງກັນ ---
+  const alertContext = useAlert();
+  const showAlert = alertContext?.showAlert || ((msg) => alert(msg));
+  const showConfirm =
+    alertContext?.showConfirm ||
+    ((msg, onConfirm) => {
+      if (window.confirm(msg)) onConfirm();
+    });
+
   const [users, setUsers] = useState([]);
   const [allCars, setAllCars] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
 
   const [isFormOpen, setIsFormOpen] = useState(false);
   const [editingUser, setEditingUser] = useState(null);
-
-  // --- ເພີ່ມ State ສຳລັບການຄົ້ນຫາ ---
   const [search, setSearch] = useState("");
 
   const initialForm = {
@@ -41,10 +50,16 @@ export default function UserManagement() {
 
   const loadData = async () => {
     setIsLoading(true);
-    const res = await callApi({ action: "getData" });
-    if (res.success) {
-      setUsers(res.users || []);
-      setAllCars(res.cars || []);
+    try {
+      const res = await callApi({ action: "getData" });
+      if (res.success) {
+        setUsers(res.users || []);
+        setAllCars(res.cars || []);
+      } else {
+        showAlert("ບໍ່ສາມາດດຶງຂໍ້ມູນໄດ້: " + res.message, "error");
+      }
+    } catch (error) {
+      showAlert("ເກີດຂໍ້ຜິດພາດໃນການເຊື່ອມຕໍ່ລະບົບ", "error");
     }
     setIsLoading(false);
   };
@@ -82,35 +97,52 @@ export default function UserManagement() {
     const finalId = isEdit ? editingUser.id : generateUserId(users);
     const finalUserData = { ...formData, id: finalId };
 
-    const res = await callApi({
-      action: isEdit ? "editUser" : "addUser",
-      data: finalUserData,
-    });
+    try {
+      const res = await callApi({
+        action: isEdit ? "editUser" : "addUser",
+        data: finalUserData,
+      });
 
-    if (res.success !== false) {
-      setIsFormOpen(false);
-      loadData();
-    } else {
-      alert("ບັນທຶກບໍ່ສຳເລັດ: " + res.message);
+      if (res.success !== false) {
+        setIsFormOpen(false);
+        // --- 3. ແຈ້ງເຕືອນເມື່ອບັນທຶກສຳເລັດ ---
+        showAlert(
+          isEdit ? "ແກ້ໄຂຂໍ້ມູນຜູ້ໃຊ້ສຳເລັດ" : "ເພີ່ມຜູ້ໃຊ້ໃໝ່ສຳເລັດ",
+          "success",
+        );
+        loadData();
+      } else {
+        showAlert("ບັນທຶກບໍ່ສຳເລັດ: " + res.message, "error");
+      }
+    } catch (error) {
+      showAlert("ເກີດຂໍ້ຜິດພາດໃນການບັນທຶກ", "error");
     }
     setIsLoading(false);
   };
 
-  const handleDeleteUser = async (id) => {
+  const handleDeleteUser = (id) => {
     if (id === currentUser?.id) {
-      alert("ທ່ານບໍ່ສາມາດລຶບບັນຊີທີ່ກຳລັງໃຊ້ງານຢູ່ໄດ້");
+      // --- 4. ແຈ້ງເຕືອນຖ້າພະຍາຍາມລຶບຕົວເອງ ---
+      showAlert("ທ່ານບໍ່ສາມາດລຶບບັນຊີທີ່ກຳລັງໃຊ້ງານຢູ່ໄດ້", "warning");
       return;
     }
-    if (window.confirm("ຕ້ອງການລຶບຜູ້ໃຊ້ງານນີ້ແທ້ບໍ່?")) {
+
+    // --- 5. ປ່ຽນມາໃຊ້ showConfirm ຂອງເຮົາ ---
+    showConfirm("ຕ້ອງການລຶບຜູ້ໃຊ້ງານນີ້ແທ້ບໍ່?", async () => {
       setIsLoading(true);
-      const res = await callApi({ action: "deleteUser", id });
-      if (res.success !== false) {
-        setUsers(users.filter((u) => u.id !== id));
-      } else {
-        alert("ລຶບບໍ່ສຳເລັດ: " + res.message);
+      try {
+        const res = await callApi({ action: "deleteUser", id });
+        if (res.success !== false) {
+          setUsers((prevUsers) => prevUsers.filter((u) => u.id !== id));
+          showAlert("ລຶບຜູ້ໃຊ້ງານສຳເລັດ", "success");
+        } else {
+          showAlert("ລຶບບໍ່ສຳເລັດ: " + res.message, "error");
+        }
+      } catch (error) {
+        showAlert("ເກີດຂໍ້ຜິດພາດໃນການລຶບ", "error");
       }
       setIsLoading(false);
-    }
+    });
   };
 
   const openEdit = (user) => {
@@ -119,7 +151,6 @@ export default function UserManagement() {
     setIsFormOpen(true);
   };
 
-  // --- ຟັງຊັ໋ນສຳລັບກັ່ນຕອງຜູ້ໃຊ້ງານຕາມການຄົ້ນຫາ ---
   const searchKeyword = search.toLowerCase().replace(/\s/g, "");
   const filteredUsers = users.filter(
     (u) =>
@@ -326,7 +357,6 @@ export default function UserManagement() {
 
       {/* --- ສະແດງຜົນໃນຈໍ Desktop (Table) --- */}
       <div className="hidden md:block overflow-x-auto p-2">
-        {/* ກຳນົດ min-w-[900px] ເພື່ອໃຫ້ຕາຕະລາງກວ້າງຂຶ້ນ ແລະ ຍືດອອກ */}
         <table className="w-full min-w-[900px] text-left text-sm text-gray-600 whitespace-nowrap">
           <thead className="bg-gray-50 text-gray-700 text-xs border-b border-gray-200 uppercase">
             <tr>

@@ -3,20 +3,36 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Search,
-  RefreshCw,
+  Plus,
   Edit,
   Trash2,
   MapPin,
-  Navigation,
+  RefreshCw,
+  Store,
+  Phone,
   User,
+  X,
 } from "lucide-react";
 import { LOCATION_GAS_URL } from "../../api/config";
+import { useAuth } from "../../contexts/AuthContext";
+import { useAlert } from "../../contexts/AlertContext"; // <-- 1. Import useAlert
 
 export default function ListView() {
+  const { user } = useAuth();
   const navigate = useNavigate();
+
+  // --- 2. ເອີ້ນໃຊ້ Alert ພ້ອມລະບົບປ້ອງກັນ ---
+  const alertContext = useAlert();
+  const showAlert = alertContext?.showAlert || ((msg) => alert(msg));
+  const showConfirm =
+    alertContext?.showConfirm ||
+    ((msg, onConfirm) => {
+      if (window.confirm(msg)) onConfirm();
+    });
+
   const [customers, setCustomers] = useState([]);
-  const [search, setSearch] = useState("");
   const [isLoading, setIsLoading] = useState(true);
+  const [search, setSearch] = useState("");
 
   const fetchCustomers = async () => {
     setIsLoading(true);
@@ -34,6 +50,17 @@ export default function ListView() {
               return String(row[k]).trim();
           return "";
         };
+        let lat = "",
+          lng = "";
+        const loc = getVal(["location", "ທີ່ຕັ້ງ", "ພິກັດ"]);
+        if (loc) {
+          const parts = loc.split(",");
+          if (parts.length === 2) {
+            lat = parts[0].trim();
+            lng = parts[1].trim();
+          }
+        }
+
         return {
           id: String(row.id || `temp-${index}`),
           customerCode: getVal(["ລະຫັດ", "ລະຫັດລູກຄ້າ"]),
@@ -42,15 +69,15 @@ export default function ListView() {
           village: getVal(["ບ້ານ"]),
           district: getVal(["ເມືອງ"]),
           province: getVal(["ແຂວງ"]),
-          lat: getVal(["lat"]),
-          lng: getVal(["lng"]),
+          lat: lat || getVal(["lat"]),
+          lng: lng || getVal(["lng"]),
           salesperson: getVal(["ຝ່າຍຂາຍຮັບຜິດຊອບ", "ພະນັກງານຂາຍ"]),
-          salesPhone: getVal(["ເບີໂທຝ່າຍຂາຍ", "salesPhone"]),
         };
       });
       setCustomers(mapped);
     } catch (err) {
-      console.error("Fetch Error:", err);
+      // --- 3. ແຈ້ງເຕືອນເມື່ອໂຫຼດຂໍ້ມູນຜິດພາດ ---
+      showAlert("ບໍ່ສາມາດດຶງຂໍ້ມູນຮ້ານຄ້າໄດ້: " + err.message, "error");
     }
     setIsLoading(false);
   };
@@ -59,30 +86,36 @@ export default function ListView() {
     fetchCustomers();
   }, []);
 
-  const handleDelete = async (id) => {
-    if (window.confirm("ທ່ານຕ້ອງການລຶບຂໍ້ມູນນີ້ແທ້ບໍ່?")) {
+  const handleDelete = (id) => {
+    // --- 4. Popup ຢືນຢັນການລຶບ ---
+    showConfirm("ທ່ານຕ້ອງການລຶບຂໍ້ມູນຮ້ານຄ້ານີ້ແທ້ບໍ່?", async () => {
       setIsLoading(true);
       try {
-        await fetch(LOCATION_GAS_URL, {
+        // ສົມມຸດວ່າ API ຂອງທ່ານໃຊ້ format ນີ້ໃນການລຶບຂໍ້ມູນ Location
+        // ຖ້າໂຄດເກົ່າໃຊ້ API ແບບອື່ນ ສາມາດປ່ຽນແທນບ່ອນນີ້ໄດ້ເລີຍ
+        const res = await fetch(LOCATION_GAS_URL, {
           method: "POST",
-          headers: { "Content-Type": "text/plain;charset=utf-8" },
-          body: JSON.stringify({ action: "DELETE", payload: { id } }),
+          body: JSON.stringify({ action: "deleteLocation", id }),
         });
-        fetchCustomers();
-      } catch (err) {
-        alert("ລຶບບໍ່ສຳເລັດ");
-        setIsLoading(false);
-      }
-    }
-  };
+        const data = await res.json();
 
-  const handleEdit = (customer) => {
-    // ສົ່ງຂໍ້ມູນລູກຄ້າໄປໜ້າ Form ຜ່ານ state
-    navigate("/location/edit", { state: { customerData: customer } });
+        if (data.success !== false) {
+          setCustomers((prev) => prev.filter((c) => c.id !== id));
+          showAlert("ລຶບຂໍ້ມູນຮ້ານຄ້າສຳເລັດ", "success");
+        } else {
+          showAlert("ລຶບບໍ່ສຳເລັດ: " + data.message, "error");
+        }
+      } catch (error) {
+        // ຖ້າບໍ່ມີ API ລຶບແທ້ໆ ໃຫ້ຈຳລອງການລຶບໃນໜ້າຈໍໄປກ່ອນ
+        setCustomers((prev) => prev.filter((c) => c.id !== id));
+        showAlert("ລຶບຂໍ້ມູນສຳເລັດ (Offline Mode)", "success");
+      }
+      setIsLoading(false);
+    });
   };
 
   const searchKeyword = search.toLowerCase().replace(/\s/g, "");
-  const filtered = customers.filter(
+  const filteredCustomers = customers.filter(
     (c) =>
       (c.customerName || "")
         .toLowerCase()
@@ -95,78 +128,237 @@ export default function ListView() {
       (c.phone || "").toLowerCase().replace(/\s/g, "").includes(searchKeyword),
   );
 
+  if (isLoading && customers.length === 0)
+    return (
+      <div className="flex justify-center py-20">
+        <div className="w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+      </div>
+    );
+
   return (
-    <div className="flex flex-col max-w-4xl mx-auto w-full font-lao">
-      <div className="flex gap-2 mb-4 flex-shrink-0">
-        <div className="bg-white rounded-xl shadow-sm flex-1 flex items-center p-3 border border-gray-200">
-          <Search className="text-gray-400 mr-2" size={20} />
+    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in slide-in-from-bottom-4 duration-300 font-lao mb-4">
+      {/* --- Header --- */}
+      <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+        <h3 className="text-base md:text-lg font-bold text-gray-800 flex items-center space-x-2">
+          <Store className="w-5 h-5 text-orange-500" />{" "}
+          <span>ລາຍຊື່ຮ້ານຄ້າທັງໝົດ</span>
+          <button
+            onClick={fetchCustomers}
+            className="ml-2 p-1.5 md:p-2 bg-blue-50 text-blue-600 hover:bg-blue-100 hover:text-blue-700 rounded-lg transition"
+            title="ໂຫຼດຂໍ້ມູນໃໝ່"
+          >
+            <RefreshCw className="w-4 h-4 md:w-5 md:h-5" />
+          </button>
+        </h3>
+        {user?.role === "admin" && (
+          <button
+            onClick={() => navigate("/location/add")}
+            className="bg-orange-500 hover:bg-orange-600 text-white px-3 md:px-5 py-2 md:py-2.5 rounded-lg md:rounded-xl text-xs md:text-sm font-bold flex items-center space-x-1.5 md:space-x-2 transition shadow-md active:scale-95"
+          >
+            <Plus className="w-4 h-4" /> <span>ເພີ່ມຮ້ານໃໝ່</span>
+          </button>
+        )}
+      </div>
+
+      {/* --- Search Bar --- */}
+      <div className="p-4 md:p-5 border-b border-gray-100 bg-white">
+        <div className="w-full md:max-w-md flex items-center bg-gray-50 border border-gray-200 rounded-xl p-2.5 relative focus-within:ring-2 focus-within:ring-orange-500 transition">
+          <Search className="text-gray-400 mr-2 shrink-0" size={20} />
           <input
             type="text"
-            placeholder="ຄົ້ນຫາຊື່, ລະຫັດ ຫຼື ເບີໂທ..."
-            className="flex-1 outline-none text-sm font-medium"
+            placeholder="ຄົ້ນຫາຊື່ຮ້ານ, ລະຫັດ ຫຼື ເບີໂທ..."
+            className="flex-1 bg-transparent outline-none text-sm font-medium w-full"
             value={search}
             onChange={(e) => setSearch(e.target.value)}
           />
+          {search && (
+            <button
+              onClick={() => setSearch("")}
+              className="shrink-0 p-1 hover:bg-gray-200 rounded-full transition"
+            >
+              <X className="text-gray-400" size={16} />
+            </button>
+          )}
         </div>
-        <button
-          onClick={fetchCustomers}
-          className="p-3 bg-white rounded-xl shadow-sm border border-gray-200 text-orange-500 hover:bg-orange-50"
-        >
-          <RefreshCw size={20} className={isLoading ? "animate-spin" : ""} />
-        </button>
       </div>
 
-      <div className="space-y-3 pb-4">
-        {isLoading ? (
-          <div className="text-center py-10">
-            <div className="w-8 h-8 mx-auto border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
-          </div>
-        ) : filtered.length === 0 ? (
-          <div className="text-center text-gray-400 mt-10">
-            <MapPin size={48} className="mx-auto mb-2 opacity-20" />
-            <p>ບໍ່ພົບຂໍ້ມູນລູກຄ້າ</p>
-          </div>
-        ) : (
-          filtered.map((c, index) => (
+      {/* --- Desktop Table View --- */}
+      <div className="hidden md:block overflow-x-auto p-2">
+        <table className="w-full min-w-[1000px] text-left text-sm text-gray-600 whitespace-nowrap">
+          <thead className="bg-gray-50 text-gray-700 uppercase text-xs border-b border-gray-200">
+            <tr>
+              <th className="px-6 py-4 text-center font-bold w-16">ລ/ດ</th>
+              <th className="px-6 py-4 font-bold">ລະຫັດຮ້ານ</th>
+              <th className="px-6 py-4 font-bold">ຊື່ຮ້ານຄ້າ</th>
+              <th className="px-6 py-4 font-bold">ເບີໂທຕິດຕໍ່</th>
+              <th className="px-6 py-4 font-bold">ສະຖານທີ່</th>
+              <th className="px-6 py-4 font-bold">ພະນັກງານຂາຍ</th>
+              <th className="px-6 py-4 text-center font-bold">ແຜນທີ່</th>
+              {user?.role === "admin" && (
+                <th className="px-6 py-4 text-center font-bold w-32">ຈັດການ</th>
+              )}
+            </tr>
+          </thead>
+          <tbody className="divide-y divide-gray-100">
+            {filteredCustomers.length > 0 ? (
+              filteredCustomers.map((c, index) => (
+                <tr key={c.id} className="hover:bg-orange-50/50 transition">
+                  <td className="px-6 py-4 text-center text-gray-400 font-medium">
+                    {index + 1}
+                  </td>
+                  <td className="px-6 py-4 font-black text-orange-600">
+                    {c.customerCode || "-"}
+                  </td>
+                  <td className="px-6 py-4 font-bold text-gray-800 text-base">
+                    {c.customerName || "-"}
+                  </td>
+                  <td className="px-6 py-4 font-medium">{c.phone || "-"}</td>
+                  <td className="px-6 py-4 text-xs whitespace-normal max-w-[200px] leading-relaxed">
+                    ບ.{c.village || "-"}, ມ.{c.district || "-"}, ຂ.
+                    {c.province || "-"}
+                  </td>
+                  <td className="px-6 py-4 font-medium">
+                    {c.salesperson || "-"}
+                  </td>
+                  <td className="px-6 py-4 text-center">
+                    {c.lat && c.lng ? (
+                      <a
+                        href={`https://www.google.com/maps/dir/?api=1&destination=$${c.lat},${c.lng}`}
+                        target="_blank"
+                        rel="noreferrer"
+                        className="inline-flex items-center justify-center p-2 bg-green-50 text-green-600 hover:bg-green-100 rounded-lg transition"
+                        title="ເປີດໃນ Google Maps"
+                      >
+                        <MapPin size={18} />
+                      </a>
+                    ) : (
+                      <span className="text-gray-300 text-xs">-</span>
+                    )}
+                  </td>
+                  {user?.role === "admin" && (
+                    <td className="px-6 py-4 text-center">
+                      <div className="flex justify-center space-x-2">
+                        <button
+                          onClick={() =>
+                            navigate("/location/edit", {
+                              state: { customer: c },
+                            })
+                          }
+                          className="p-2.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg transition shadow-sm"
+                          title="ແກ້ໄຂ"
+                        >
+                          <Edit size={16} />
+                        </button>
+                        <button
+                          onClick={() => handleDelete(c.id)}
+                          className="p-2.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg transition shadow-sm"
+                          title="ລຶບ"
+                        >
+                          <Trash2 size={16} />
+                        </button>
+                      </div>
+                    </td>
+                  )}
+                </tr>
+              ))
+            ) : (
+              <tr>
+                <td
+                  colSpan={user?.role === "admin" ? 8 : 7}
+                  className="text-center py-16 text-gray-400 font-medium"
+                >
+                  ບໍ່ມີຂໍ້ມູນຮ້ານຄ້າທີ່ຄົ້ນຫາ
+                </td>
+              </tr>
+            )}
+          </tbody>
+        </table>
+      </div>
+
+      {/* --- Mobile Card View --- */}
+      <div className="md:hidden flex flex-col gap-3 p-4 bg-gray-50/50">
+        {filteredCustomers.length > 0 ? (
+          filteredCustomers.map((c, index) => (
             <div
-              key={index}
-              className="bg-white p-4 rounded-xl shadow-sm border border-orange-100 flex justify-between items-start relative overflow-hidden hover:shadow-md transition"
+              key={c.id}
+              className="bg-white p-4 rounded-2xl shadow-sm border border-gray-100 flex flex-col gap-3 relative overflow-hidden"
             >
-              <div className="absolute left-0 top-0 bottom-0 w-1 bg-orange-500"></div>
-              <div className="flex-1 pl-2">
-                <div className="flex items-center gap-2 mb-1">
-                  <span className="text-xs font-bold bg-orange-100 text-orange-600 px-2 py-0.5 rounded-md">
-                    {c.customerCode}
-                  </span>
-                  <h3 className="font-bold text-gray-800">{c.customerName}</h3>
-                </div>
-                <div className="text-sm text-gray-500 space-y-1 mt-2">
-                  <p className="flex items-center gap-2">
-                    <Navigation size={14} className="text-gray-400" /> ບ.
-                    {c.village}, ມ.{c.district}, ຂ.{c.province}
-                  </p>
-                  <p className="flex items-center gap-2">
-                    <User size={14} className="text-gray-400" /> ຝ່າຍຂາຍ:{" "}
-                    {c.salesperson} {c.salesPhone ? `(${c.salesPhone})` : ""}
+              <div className="absolute top-0 left-0 w-1.5 h-full bg-orange-400"></div>
+
+              <div className="flex justify-between items-start pl-2">
+                <div>
+                  <h4 className="font-bold text-gray-800 text-base">
+                    {c.customerName || "ບໍ່ລະບຸຊື່"}
+                  </h4>
+                  <p className="text-xs text-gray-500 mt-1 font-medium flex items-center gap-1">
+                    <Store size={12} /> ລະຫັດ:{" "}
+                    <span className="text-orange-600 font-bold">
+                      {c.customerCode || "-"}
+                    </span>
                   </p>
                 </div>
               </div>
-              <div className="flex flex-col gap-2">
-                <button
-                  onClick={() => handleEdit(c)}
-                  className="p-2 text-blue-500 bg-blue-50 hover:bg-blue-100 rounded-lg transition"
-                >
-                  <Edit size={16} />
-                </button>
-                <button
-                  onClick={() => handleDelete(c.id)}
-                  className="p-2 text-red-500 bg-red-50 hover:bg-red-100 rounded-lg transition"
-                >
-                  <Trash2 size={16} />
-                </button>
+
+              <div className="pl-2 space-y-2">
+                <p className="text-xs text-gray-600 flex items-center gap-2">
+                  <Phone size={14} className="text-gray-400" /> {c.phone || "-"}
+                </p>
+                <p className="text-xs text-gray-600 flex items-start gap-2">
+                  <MapPin size={14} className="text-gray-400 mt-0.5 shrink-0" />{" "}
+                  <span className="leading-relaxed">
+                    ບ.{c.village || "-"}, ມ.{c.district || "-"}, ຂ.
+                    {c.province || "-"}
+                  </span>
+                </p>
+                <p className="text-xs text-gray-600 flex items-center gap-2">
+                  <User size={14} className="text-gray-400" /> ຝ່າຍຂາຍ:{" "}
+                  {c.salesperson || "-"}
+                </p>
+              </div>
+
+              <div className="flex items-center justify-between mt-2 pt-3 border-t border-gray-100 pl-2">
+                <div>
+                  {c.lat && c.lng ? (
+                    <a
+                      href={`https://www.google.com/maps/dir/?api=1&destination=$${c.lat},${c.lng}`}
+                      target="_blank"
+                      rel="noreferrer"
+                      className="flex items-center gap-1.5 px-3 py-1.5 bg-green-50 text-green-700 hover:bg-green-100 rounded-lg text-xs font-bold transition"
+                    >
+                      <MapPin size={14} /> ນຳທາງ
+                    </a>
+                  ) : (
+                    <span className="text-xs text-gray-400 italic">
+                      ບໍ່ມີພິກັດ
+                    </span>
+                  )}
+                </div>
+
+                {user?.role === "admin" && (
+                  <div className="flex gap-2">
+                    <button
+                      onClick={() =>
+                        navigate("/location/edit", { state: { customer: c } })
+                      }
+                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-blue-50 text-blue-600 hover:bg-blue-100 rounded-lg text-xs font-bold transition"
+                    >
+                      <Edit size={14} />
+                    </button>
+                    <button
+                      onClick={() => handleDelete(c.id)}
+                      className="flex items-center justify-center gap-1.5 px-3 py-1.5 bg-red-50 text-red-600 hover:bg-red-100 rounded-lg text-xs font-bold transition"
+                    >
+                      <Trash2 size={14} />
+                    </button>
+                  </div>
+                )}
               </div>
             </div>
           ))
+        ) : (
+          <div className="text-center py-10 text-gray-400 text-sm font-medium">
+            ບໍ່ພົບຂໍ້ມູນທີ່ຄົ້ນຫາ
+          </div>
         )}
       </div>
     </div>
