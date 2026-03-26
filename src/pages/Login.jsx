@@ -14,15 +14,19 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
-    // ບັງຄັບໃຫ້ພື້ນຫຼັງເຕັມຈໍ ແລະ ກຳຈັດຂອບຂາວ
+    // 1. ບັງຄັບໃຫ້ພື້ນຫຼັງເຕັມຈໍ ແລະ ກຳຈັດຂອບຂາວ
     document.body.style.margin = "0";
     document.body.style.padding = "0";
     document.body.style.overflow = "hidden";
 
-    // ປັບສີ Status Bar ຂອງມືຖື
+    // 2. ສຳຄັນ: ປ່ຽນສີພື້ນຫຼັງຂອງ Body ໃຫ້ກົງກັບສີ from-orange-400 (#fb923c)
+    // ວິທີນີ້ຊ່ວຍແກ້ບັນຫາຂອບເທິງ-ລຸ່ມສີຂາວໃນ iPhone ໄດ້ 100%
+    document.body.style.backgroundColor = "#fb923c";
+
+    // 3. ປັບສີ Status Bar ຂອງມືຖື ໃຫ້ກົງກັບສີເທິງສຸດຂອງ Gradient
     const metaTheme = document.createElement("meta");
     metaTheme.name = "theme-color";
-    metaTheme.content = "#f97316";
+    metaTheme.content = "#fb923c"; // ປ່ຽນມາໃຊ້ສີ #fb923c ໃຫ້ກົມກືນແທ້ໆ
     document.head.appendChild(metaTheme);
 
     const metaApple = document.createElement("meta");
@@ -31,9 +35,11 @@ export default function Login() {
     document.head.appendChild(metaApple);
 
     return () => {
+      // ຄືນຄ່າທັງໝົດເມື່ອອອກຈາກໜ້າ Login
       document.body.style.margin = "";
       document.body.style.padding = "";
       document.body.style.overflow = "";
+      document.body.style.backgroundColor = ""; // ລ້າງສີພື້ນຫຼັງ
       if (metaTheme.parentNode) metaTheme.parentNode.removeChild(metaTheme);
       if (metaApple.parentNode) metaApple.parentNode.removeChild(metaApple);
     };
@@ -161,8 +167,8 @@ export default function Login() {
       {/* --- Footer Main ຂອງລະບົບ --- */}
       <div className="w-full py-5 md:py-6 text-center z-20 bg-black/5 backdrop-blur-sm border-t border-white/10">
         <p className="text-xs md:text-xs text-white/90 font-bold uppercase tracking-[0.2em] flex justify-center items-center px-4">
-          &copy; {new Date().getFullYear()} P And P Trading Export-Import Co.,
-          Ltd
+          P And P Trading Export-Import Co.,Ltd &copy;{" "}
+          {new Date().getFullYear()}
         </p>
       </div>
     </div>
