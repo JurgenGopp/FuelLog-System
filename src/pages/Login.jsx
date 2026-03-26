@@ -51,7 +51,7 @@ export default function Login() {
         />
       </div>
       <h2 className="text-xl md:text-2xl font-bold text-center text-gray-800 mb-6 md:mb-8 font-lao">
-        ເຂົ້າສູ່ລະບົບ - ລະບົບບັນທຶກການຕື່ມນ້ຳມັນ
+        ເຂົ້າສູ່ລະບົບ
       </h2>
 
       {error && (

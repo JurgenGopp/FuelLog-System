@@ -60,7 +60,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         <div className="flex items-center space-x-2 font-bold min-w-0 flex-1 pr-2">
           <span className="text-sm md:text-lg truncate">
             {/* ອັບເດດຊື່ລະບົບຕາມທີ່ທ່ານຕັ້ງຄ່າ */}
-            ລະບົບບັນທຶກການຕື່ມນ້ຳມັນ
+            ລະບົບການຈັດການ ການຂົນສົ່ງ
           </span>
         </div>
         <button

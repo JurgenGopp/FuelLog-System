@@ -425,12 +425,18 @@ export default function RoutePlanner() {
   };
 
   const handleOpenGoogleMaps = () => {
-    const validWps = waypoints.filter((wp) => wp !== null);
+    const validWps = waypoints.filter((wp) => wp !== null && wp.lat && wp.lng);
     if (validWps.length < 2)
-      return showAlert("ກະລຸນາເລືອກຢ່າງໜ້ອຍ 2 ຈຸດ", "warning");
+      return showAlert("ກະລຸນາເລືອກຢ່າງໜ້ອຍ 2 ຈຸດ ທີ່ມີພິກັດ", "warning");
 
-    let url = `https://www.google.com/maps/dir/?api=1&origin=$${validWps[0].lat},${validWps[0].lng}&destination=${validWps[validWps.length - 1].lat},${validWps[validWps.length - 1].lng}`;
+    // ກຳນົດຈຸດເລີ່ມຕົ້ນ (Origin) ແລະ ຈຸດປາຍທາງ (Destination)
+    const origin = `${validWps[0].lat},${validWps[0].lng}`;
+    const destination = `${validWps[validWps.length - 1].lat},${validWps[validWps.length - 1].lng}`;
 
+    // ສ້າງ Link ມາດຕະຖານຂອງ Google Maps Directions
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
+
+    // ຖ້າມີຈຸດແວ່ (Waypoints) ເຄິ່ງກາງ ໃຫ້ເອົາໃສ່ເພີ່ມ
     if (validWps.length > 2) {
       const waypts = validWps
         .slice(1, -1)
@@ -439,6 +445,7 @@ export default function RoutePlanner() {
       url += `&waypoints=${waypts}`;
     }
 
+    // ເປີດແທັບໃໝ່ ໄປຫາແອັບ Google Maps
     window.open(url, "_blank");
   };
 

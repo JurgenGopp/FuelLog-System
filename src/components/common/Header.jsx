@@ -7,14 +7,13 @@ export default function Header({ setSidebarOpen }) {
   const location = useLocation();
   const [currentDate, setCurrentDate] = useState("");
 
-  // ດຶງວັນທີປັດຈຸບັນມາສະແດງ (Format: DD/MM/YYYY)
+  // ດຶງວັນທີປັດຈຸບັນມາສະແດງ
   useEffect(() => {
     const today = new Date();
     const options = { day: "2-digit", month: "2-digit", year: "numeric" };
     setCurrentDate(today.toLocaleDateString("en-GB", options));
   }, []);
 
-  // ຟັງຊັ໋ນສຳລັບກຳນົດຊື່ໜ້າ ຕາມ URL ປັດຈຸບັນ
   const getPageTitle = (path) => {
     if (path === "/") return "ໜ້າຫຼັກ (Dashboard)";
     if (path.includes("/fuel/history")) return "ປະຫວັດການເຕີມ";
@@ -22,25 +21,37 @@ export default function Header({ setSidebarOpen }) {
       return "ບັນທຶກໃສ່ນ້ຳມັນ";
     if (path.includes("/fuel/report")) return "ລາຍງານການເຕີມນ້ຳມັນ";
 
-    // ເມນູໂລເຄຊັ໋ນຮ້ານຄ້າ
     if (path.includes("/location/map")) return "ແຜນທີ່ຮ້ານຄ້າ";
     if (path.includes("/location/route")) return "ຄົ້ນຫາເສັ້ນທາງ";
     if (path.includes("/location/list")) return "ລາຍຊື່ຮ້ານຄ້າ";
     if (path.includes("/location/add") || path.includes("/location/edit"))
       return "ຈັດການຂໍ້ມູນຮ້ານຄ້າ";
 
-    // ເມນູອື່ນໆ
     if (path.includes("/users")) return "ການຈັດການຜູ້ໃຊ້ງານ";
 
     return "ລະບົບບັນທຶກການຕື່ມນ້ຳມັນ";
   };
 
+  // --- ຟັງຊັ໋ນສຳລັບເລື່ອນໜ້າຈໍຂຶ້ນເທິງສຸດ ---
+  const scrollToTop = () => {
+    window.scrollTo({
+      top: 0,
+      behavior: "smooth", // ເລື່ອນຂຶ້ນແບບນຸ້ມນວນ
+    });
+  };
+
   return (
-    <header className="bg-orange-500 text-white h-16 flex items-center justify-between px-4 md:px-6 shadow-sm sticky top-0 z-20 font-lao">
+    <header
+      onClick={scrollToTop}
+      className="bg-orange-500 text-white h-16 flex items-center justify-between px-4 md:px-6 shadow-sm sticky top-0 z-20 font-lao active:bg-orange-600 transition-colors cursor-pointer select-none"
+    >
       <div className="flex items-center">
         {/* ປຸ່ມ Menu ສຳລັບມືຖື */}
         <button
-          onClick={() => setSidebarOpen && setSidebarOpen(true)}
+          onClick={(e) => {
+            e.stopPropagation(); // ປ້ອງກັນບໍ່ໃຫ້ການກົດປຸ່ມນີ້ ໄປເອີ້ນໃຊ້ scrollToTop
+            setSidebarOpen && setSidebarOpen(true);
+          }}
           className="lg:hidden mr-3 p-1.5 hover:bg-orange-600 rounded-lg transition"
         >
           <Menu size={24} />
@@ -52,9 +63,12 @@ export default function Header({ setSidebarOpen }) {
         </h2>
       </div>
 
-      <div className="flex items-center gap-3 md:gap-4">
+      <div
+        className="flex items-center gap-3 md:gap-4"
+        onClick={(e) => e.stopPropagation()} // ປ້ອງກັນເວລາກົດຖືກວັນທີແລ້ວເລື່ອນຂຶ້ນ
+      >
         {/* ສ່ວນທີ່ສະແດງວັນທີພຽງຢ່າງດຽວ */}
-        <div className="flex items-center gap-1.5 bg-orange-600/50 border border-orange-400/50 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium shadow-inner">
+        <div className="flex items-center gap-1.5 bg-orange-600/50 border border-orange-400/50 px-3 py-1.5 rounded-lg text-xs md:text-sm font-medium shadow-inner cursor-default">
           <Calendar size={16} className="text-orange-100" />
           <span className="hidden sm:inline text-orange-50">ວັນທີ: </span>
           <span className="font-bold">{currentDate}</span>
