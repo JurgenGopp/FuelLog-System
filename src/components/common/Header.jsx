@@ -29,14 +29,20 @@ export default function Header({ setSidebarOpen }) {
 
     if (path.includes("/users")) return "ການຈັດການຜູ້ໃຊ້ງານ";
 
-    return "ລະບົບບັນທຶກການຕື່ມນ້ຳມັນ";
+    return "ໜ້າຫຼັກ (Dashboard)";
   };
 
-  // --- ຟັງຊັ໋ນສຳລັບເລື່ອນໜ້າຈໍຂຶ້ນເທິງສຸດ ---
+  // --- ຟັງຊັ໋ນສຳລັບເລື່ອນໜ້າຈໍຂຶ້ນເທິງສຸດ (ອັບເດດໃໝ່ໃຫ້ຮອງຮັບທຸກ Layout) ---
   const scrollToTop = () => {
-    window.scrollTo({
-      top: 0,
-      behavior: "smooth", // ເລື່ອນຂຶ້ນແບບນຸ້ມນວນ
+    // 1. ເລື່ອນ window ຫຼັກ
+    window.scrollTo({ top: 0, behavior: "smooth" });
+
+    // 2. ເລື່ອນ container ພາຍໃນ (ສຳລັບເວັບທີ່ໃຊ້ Layout ແບບ Fix ໜ້າຈໍ)
+    const scrollableElements = document.querySelectorAll(
+      ".overflow-y-auto, .overflow-auto, main",
+    );
+    scrollableElements.forEach((el) => {
+      el.scrollTo({ top: 0, behavior: "smooth" });
     });
   };
 
