@@ -1,10 +1,17 @@
 // src/pages/store-location/FormView.jsx
 import React, { useState, useEffect, useRef } from "react";
 import { useNavigate, useLocation } from "react-router-dom";
-import { MapPin, Store, LocateFixed, CheckCircle, XCircle } from "lucide-react";
+import {
+  MapPin,
+  Store,
+  LocateFixed,
+  CheckCircle,
+  XCircle,
+  User,
+} from "lucide-react";
 import { LOCATION_GAS_URL, GOOGLE_MAPS_API_KEY } from "../../api/config";
 import { useAuth } from "../../contexts/AuthContext";
-import { useAlert } from "../../contexts/AlertContext"; // <-- 1. Import useAlert
+import { useAlert } from "../../contexts/AlertContext";
 
 export default function FormView() {
   const navigate = useNavigate();
@@ -12,7 +19,6 @@ export default function FormView() {
   const isEdit = !!locationState?.customer;
   const { user } = useAuth();
 
-  // --- 2. ດຶງຟັງຊັ໋ນແຈ້ງເຕືອນ ພ້ອມລະບົບ Fail-Safe ---
   const alertContext = useAlert();
   const showAlert = alertContext?.showAlert || ((msg) => alert(msg));
 
@@ -20,13 +26,15 @@ export default function FormView() {
     id: "",
     customerCode: "",
     customerName: "",
+    channel: "",
     phone: "",
     village: "",
     district: "",
     province: "",
     lat: "",
     lng: "",
-    salesperson: user?.name || "",
+    salesperson: "",
+    salesPhone: "",
   });
 
   const [isSaving, setIsSaving] = useState(false);
@@ -36,14 +44,37 @@ export default function FormView() {
   const [map, setMap] = useState(null);
   const [marker, setMarker] = useState(null);
 
-  // ໂຫຼດຂໍ້ມູນຖ້າເປັນການແກ້ໄຂ
   useEffect(() => {
     if (isEdit) {
-      setFormData((prev) => ({ ...prev, ...locationState.customer }));
+      const c = locationState.customer;
+
+      let lat = c.lat || "";
+      let lng = c.lng || "";
+      if (c.location && (!lat || !lng)) {
+        const parts = c.location.split(",");
+        if (parts.length === 2) {
+          lat = parts[0].trim();
+          lng = parts[1].trim();
+        }
+      }
+
+      setFormData({
+        id: c.id || "",
+        customerCode: c.customerCode || c["ລະຫັດລູກຄ້າ"] || "",
+        customerName: c.customerName || c["ລາຍຊື່ລູກຄ້າ"] || "",
+        channel: c.channel || c["ຊ່ອງທາງ"] || "",
+        phone: c.phone || c["ເບີໂທ"] || "",
+        village: c.village || c["ບ້ານ"] || "",
+        district: c.district || c["ເມືອງ"] || "",
+        province: c.province || c["ແຂວງ"] || "",
+        lat: lat,
+        lng: lng,
+        salesperson: c.salesperson || c["ຝ່າຍຂາຍຮັບຜິດຊອບ"] || "",
+        salesPhone: c.salesPhone || c["ເບີໂທຝ່າຍຂາຍ"] || "",
+      });
     }
   }, [isEdit, locationState]);
 
-  // ໂຫຼດ Google Maps Script
   useEffect(() => {
     if (window.google && window.google.maps) {
       setScriptLoaded(true);
@@ -60,7 +91,6 @@ export default function FormView() {
     }
   }, []);
 
-  // ສ້າງແຜນທີ່
   useEffect(() => {
     if (scriptLoaded && window.google && mapRef.current && !map) {
       const defaultPos = { lat: 17.9757, lng: 102.6331 }; // Vientiane
@@ -77,7 +107,7 @@ export default function FormView() {
         center: initialPos,
         zoom: isEdit && formData.lat ? 16 : 12,
         mapTypeId: "hybrid",
-        gestureHandling: "greedy", // ໃຊ້ນິ້ວດຽວເລື່ອນໄດ້
+        gestureHandling: "greedy",
         disableDefaultUI: false,
         zoomControlOptions: {
           position: window.google.maps.ControlPosition.LEFT_BOTTOM,
@@ -101,7 +131,6 @@ export default function FormView() {
       });
       setMarker(mark);
 
-      // ເມື່ອກົດແຜນທີ່ ໃຫ້ຍ້າຍ Marker ໄປຈຸດນັ້ນ
       m.addListener("click", (e) => {
         const lat = e.latLng.lat().toFixed(6);
         const lng = e.latLng.lng().toFixed(6);
@@ -110,7 +139,6 @@ export default function FormView() {
         setFormData((prev) => ({ ...prev, lat, lng }));
       });
 
-      // ເມື່ອລາກ Marker ສຳເລັດ
       mark.addListener("dragend", (e) => {
         const lat = e.latLng.lat().toFixed(6);
         const lng = e.latLng.lng().toFixed(6);
@@ -125,7 +153,7 @@ export default function FormView() {
   };
 
   const handleLocateMe = (e) => {
-    e.preventDefault(); // ປ້ອງກັນ Form Submit
+    e.preventDefault();
     if (navigator.geolocation && map && marker) {
       showAlert("ກຳລັງຄົ້ນຫາທີ່ຕັ້ງ...", "success");
       navigator.geolocation.getCurrentPosition(
@@ -156,15 +184,51 @@ export default function FormView() {
     }
   };
 
+  const handleShowOnMap = () => {
+    const parsedLat = parseFloat(formData.lat);
+    const parsedLng = parseFloat(formData.lng);
+
+    if (!isNaN(parsedLat) && !isNaN(parsedLng)) {
+      const newPos = { lat: parsedLat, lng: parsedLng };
+      if (map && marker) {
+        map.setCenter(newPos);
+        map.setZoom(16);
+        marker.setPosition(newPos);
+        marker.setVisible(true);
+        showAlert("ອັບເດດຕຳແໜ່ງໃນແຜນທີ່ສຳເລັດ", "success");
+      }
+    } else {
+      showAlert("ກະລຸນາປ້ອນພິກັດ (ຕົວເລກ) ໃຫ້ຖືກຕ້ອງກ່ອນ", "warning");
+    }
+  };
+
   const handleSave = async (e) => {
     e.preventDefault();
     setIsSaving(true);
 
-    // ສົມມຸດວ່າການບັນທຶກໃຊ້ API ນີ້ (ປັບແກ້ຕາມ API ຈິງຂອງທ່ານ)
     try {
+      const now = new Date();
+      const recordedAt = now.toLocaleString("en-GB");
+
+      const apiData = {
+        id: formData.id || "",
+        ລະຫັດລູກຄ້າ: formData.customerCode,
+        ລາຍຊື່ລູກຄ້າ: formData.customerName,
+        ຊ່ອງທາງ: formData.channel,
+        ເບີໂທ: formData.phone,
+        ບ້ານ: formData.village,
+        ເມືອງ: formData.district,
+        ແຂວງ: formData.province,
+        location: `${formData.lat}, ${formData.lng}`,
+        ຝ່າຍຂາຍຮັບຜິດຊອບ: formData.salesperson,
+        ເບີໂທຝ່າຍຂາຍ: formData.salesPhone,
+        ວັນທີສ້າງ: recordedAt,
+        ຜູ້ສ້າງ: user?.username || user?.name || "Unknown",
+      };
+
       const payload = {
         action: isEdit ? "editLocation" : "addLocation",
-        data: { ...formData, location: `${formData.lat},${formData.lng}` }, // ປະກອບ lat,lng ເຂົ້າກັນຖ້າ DB ຕ້ອງການ
+        data: apiData,
       };
 
       const res = await fetch(LOCATION_GAS_URL, {
@@ -174,7 +238,6 @@ export default function FormView() {
       const data = await res.json();
 
       if (data.success !== false) {
-        // --- 3. ແຈ້ງເຕືອນສຳເລັດແລ້ວປ່ຽນໜ້າ ---
         showAlert(
           isEdit ? "ແກ້ໄຂຂໍ້ມູນຮ້ານຄ້າສຳເລັດ" : "ບັນທຶກຮ້ານຄ້າໃໝ່ສຳເລັດ",
           "success",
@@ -184,7 +247,6 @@ export default function FormView() {
         showAlert("ບັນທຶກບໍ່ສຳເລັດ: " + data.message, "error");
       }
     } catch (err) {
-      // Offline fallback ສຳລັບການທົດສອບ
       showAlert(
         isEdit
           ? "ແກ້ໄຂຂໍ້ມູນສຳເລັດ (Offline Mode)"
@@ -198,7 +260,19 @@ export default function FormView() {
   };
 
   return (
-    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 p-4 md:p-8 font-lao animate-in slide-in-from-bottom-4 duration-300 mb-4 max-w-5xl mx-auto">
+    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 p-4 md:p-8 font-lao animate-in slide-in-from-bottom-4 duration-300 mb-4 max-w-5xl mx-auto relative">
+      {/* --- ໜ້າຈໍ Loading ສະເພາະຕອນກຳລັງບັນທຶກ --- */}
+      {isSaving && (
+        <div className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm flex justify-center items-center">
+          <div className="bg-white px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
+            <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="font-bold text-gray-700 text-sm md:text-base">
+              ກຳລັງບັນທຶກຂໍ້ມູນ...
+            </p>
+          </div>
+        </div>
+      )}
+
       <h2 className="text-lg md:text-2xl font-bold text-gray-800 mb-6 md:mb-8 border-b pb-3 md:pb-4 flex items-center space-x-2 md:space-x-3">
         <div className="bg-orange-100 p-1.5 md:p-2 rounded-lg">
           <Store className="text-orange-500 w-5 h-5 md:w-6 md:h-6" />
@@ -216,7 +290,7 @@ export default function FormView() {
             <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
               <div>
                 <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5">
-                  ລະຫັດຮ້ານຄ້າ *
+                  ລະຫັດລູກຄ້າ *
                 </label>
                 <input
                   required
@@ -224,12 +298,12 @@ export default function FormView() {
                   value={formData.customerCode}
                   onChange={handleChange}
                   className="w-full h-[48px] px-4 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-sm bg-gray-50 focus:bg-white"
-                  placeholder="ປ້ອນລະຫັດຮ້ານ..."
+                  placeholder="ປ້ອນລະຫັດ..."
                 />
               </div>
               <div>
                 <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5">
-                  ຊື່ຮ້ານຄ້າ *
+                  ຊື່ລູກຄ້າ *
                 </label>
                 <input
                   required
@@ -237,22 +311,37 @@ export default function FormView() {
                   value={formData.customerName}
                   onChange={handleChange}
                   className="w-full h-[48px] px-4 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-sm bg-gray-50 focus:bg-white"
-                  placeholder="ປ້ອນຊື່ຮ້ານ..."
+                  placeholder="ປ້ອນຊື່ຮ້ານ/ລູກຄ້າ..."
                 />
               </div>
             </div>
 
-            <div>
-              <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5">
-                ເບີໂທຕິດຕໍ່
-              </label>
-              <input
-                name="phone"
-                value={formData.phone}
-                onChange={handleChange}
-                className="w-full h-[48px] px-4 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-sm bg-gray-50 focus:bg-white"
-                placeholder="ປ້ອນເບີໂທ..."
-              />
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              {/* ຊ່ອງເພີ່ມໃໝ່: ຊ່ອງທາງ */}
+              <div>
+                <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5">
+                  ຊ່ອງທາງ (Channel)
+                </label>
+                <input
+                  name="channel"
+                  value={formData.channel}
+                  onChange={handleChange}
+                  className="w-full h-[48px] px-4 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-sm bg-gray-50 focus:bg-white"
+                  placeholder="ຕົວຢ່າງ: HOReCa..."
+                />
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5">
+                  ເບີໂທຕິດຕໍ່ (ຮ້ານ)
+                </label>
+                <input
+                  name="phone"
+                  value={formData.phone}
+                  onChange={handleChange}
+                  className="w-full h-[48px] px-4 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-sm bg-gray-50 focus:bg-white"
+                  placeholder="ປ້ອນເບີໂທຮ້ານຄ້າ..."
+                />
+              </div>
             </div>
 
             <h3 className="font-bold text-gray-800 flex items-center gap-2 mt-6 mb-2 border-b border-gray-100 pb-2">
@@ -287,10 +376,9 @@ export default function FormView() {
               </div>
               <div>
                 <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5">
-                  ແຂວງ *
+                  ແຂວງ
                 </label>
                 <input
-                  required
                   name="province"
                   value={formData.province}
                   onChange={handleChange}
@@ -300,17 +388,34 @@ export default function FormView() {
               </div>
             </div>
 
-            <div className="pt-2">
-              <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5">
-                ພະນັກງານຂາຍຮັບຜິດຊອບ
-              </label>
-              <input
-                name="salesperson"
-                value={formData.salesperson}
-                onChange={handleChange}
-                className="w-full h-[48px] px-4 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-sm bg-gray-50 focus:bg-white"
-                placeholder="ຊື່ພະນັກງານຂາຍ..."
-              />
+            <h3 className="font-bold text-gray-800 flex items-center gap-2 mt-6 mb-2 border-b border-gray-100 pb-2">
+              <User size={18} className="text-gray-400" /> ຂໍ້ມູນຜູ້ຮັບຜິດຊອບ
+            </h3>
+            <div className="grid grid-cols-1 md:grid-cols-2 gap-4">
+              <div>
+                <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5">
+                  ຝ່າຍຂາຍຮັບຜິດຊອບ
+                </label>
+                <input
+                  name="salesperson"
+                  value={formData.salesperson}
+                  onChange={handleChange}
+                  className="w-full h-[48px] px-4 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-sm bg-gray-50 focus:bg-white"
+                  placeholder="ປ້ອນຊື່ຝ່າຍຂາຍ..."
+                />
+              </div>
+              <div>
+                <label className="block text-xs md:text-sm font-bold text-gray-700 mb-1.5">
+                  ເບີໂທ ຝ່າຍຂາຍ
+                </label>
+                <input
+                  name="salesPhone"
+                  value={formData.salesPhone}
+                  onChange={handleChange}
+                  className="w-full h-[48px] px-4 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-sm bg-gray-50 focus:bg-white"
+                  placeholder="ປ້ອນເບີໂທຝ່າຍຂາຍ..."
+                />
+              </div>
             </div>
           </div>
 
@@ -347,23 +452,45 @@ export default function FormView() {
               </button>
             </div>
 
-            <div className="grid grid-cols-2 gap-3 pt-1">
-              <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200">
-                <p className="text-[10px] text-gray-400 font-bold mb-0.5">
-                  Latitude
-                </p>
-                <p className="text-xs md:text-sm font-bold text-gray-700 truncate">
-                  {formData.lat || "-"}
-                </p>
+            <div className="flex flex-col gap-3 pt-2">
+              <div className="grid grid-cols-2 gap-3">
+                <div>
+                  <label className="text-[10px] text-gray-500 font-bold mb-1 block">
+                    Latitude (ລັດຕິຈູດ)
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    name="lat"
+                    value={formData.lat}
+                    onChange={handleChange}
+                    placeholder="ຕົວຢ່າງ: 17.9757"
+                    className="w-full h-[42px] px-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-sm bg-gray-50 focus:bg-white"
+                  />
+                </div>
+                <div>
+                  <label className="text-[10px] text-gray-500 font-bold mb-1 block">
+                    Longitude (ລອງຈິຈູດ)
+                  </label>
+                  <input
+                    type="number"
+                    step="any"
+                    name="lng"
+                    value={formData.lng}
+                    onChange={handleChange}
+                    placeholder="ຕົວຢ່າງ: 102.6331"
+                    className="w-full h-[42px] px-3 border border-gray-300 rounded-xl outline-none focus:ring-2 focus:ring-orange-500 transition text-sm bg-gray-50 focus:bg-white"
+                  />
+                </div>
               </div>
-              <div className="bg-gray-50 p-2.5 rounded-xl border border-gray-200">
-                <p className="text-[10px] text-gray-400 font-bold mb-0.5">
-                  Longitude
-                </p>
-                <p className="text-xs md:text-sm font-bold text-gray-700 truncate">
-                  {formData.lng || "-"}
-                </p>
-              </div>
+              <button
+                type="button"
+                onClick={handleShowOnMap}
+                className="w-full bg-blue-50 text-blue-600 hover:bg-blue-100 border border-blue-200 px-4 py-2.5 rounded-xl flex items-center justify-center gap-2 font-bold transition shadow-sm active:scale-95 text-sm"
+              >
+                <MapPin size={18} />
+                ສະແດງຕຳແໜ່ງໃນແຜນທີ່
+              </button>
             </div>
           </div>
         </div>

@@ -1,10 +1,11 @@
 // src/pages/FuelFormPage.jsx
 import React, { useState, useEffect } from "react";
 import { useNavigate, useParams } from "react-router-dom";
-import { Droplet, Edit, ImageIcon, AlertCircle } from "lucide-react";
+// --- ປ່ຽນຈາກ Droplet ເປັນ Fuel ຢູ່ບ່ອນນີ້ ---
+import { Fuel, Edit, ImageIcon, AlertCircle } from "lucide-react";
 import { callApi } from "../api/config";
 import { useAuth } from "../contexts/AuthContext";
-import { useAlert } from "../contexts/AlertContext"; // <-- 1. Import useAlert
+import { useAlert } from "../contexts/AlertContext";
 import {
   getLaosDateString,
   formatInteger,
@@ -30,7 +31,6 @@ export default function FuelFormPage() {
   const navigate = useNavigate();
   const { user } = useAuth();
 
-  // --- 2. ເອີ້ນໃຊ້ຟັງຊັ໋ນແຈ້ງເຕືອນ ພ້ອມລະບົບປ້ອງກັນ ---
   const alertContext = useAlert();
   const showAlert = alertContext?.showAlert || ((msg) => alert(msg));
 
@@ -88,7 +88,6 @@ export default function FuelFormPage() {
               setReceiptError(false);
               setOdometerError(false);
             } else {
-              // --- 3. ປ່ຽນການແຈ້ງເຕືອນເປັນ showAlert ---
               showAlert("ບໍ່ພົບຂໍ້ມູນທີ່ຕ້ອງການແກ້ໄຂ!", "error");
               navigate("/fuel/history");
             }
@@ -187,7 +186,6 @@ export default function FuelFormPage() {
         data: payloadData,
       });
       if (res.success !== false) {
-        // --- 4. ແຈ້ງເຕືອນສຳເລັດກ່ອນປ່ຽນໜ້າ ---
         showAlert(
           isEdit ? "ແກ້ໄຂຂໍ້ມູນສຳເລັດ" : "ບັນທຶກຂໍ້ມູນສຳເລັດ",
           "success",
@@ -210,10 +208,23 @@ export default function FuelFormPage() {
     );
 
   return (
-    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 p-4 md:p-8 font-lao animate-in slide-in-from-bottom-4 duration-300 mb-4">
+    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 p-4 md:p-8 font-lao animate-in slide-in-from-bottom-4 duration-300 mb-4 relative">
+      {/* --- ໜ້າຈໍ Loading ສະເພາະຕອນກຳລັງບັນທຶກ --- */}
+      {isSaving && (
+        <div className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm flex justify-center items-center">
+          <div className="bg-white px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
+            <div className="w-10 h-10 border-4 border-orange-500 border-t-transparent rounded-full animate-spin"></div>
+            <p className="font-bold text-gray-700 text-sm md:text-base">
+              ກຳລັງບັນທຶກຂໍ້ມູນ...
+            </p>
+          </div>
+        </div>
+      )}
+
       <h2 className="text-lg md:text-2xl font-bold text-gray-800 mb-4 md:mb-8 border-b pb-3 md:pb-4 flex items-center space-x-2 md:space-x-3">
         <div className="bg-orange-100 p-1.5 md:p-2 rounded-lg">
-          <Droplet className="text-orange-500 w-5 h-5 md:w-6 h-6" />
+          {/* --- ປ່ຽນຈາກຮູບຢົດນ້ຳມາເປັນຮູບຕູ້ນ້ຳມັນ (Fuel) --- */}
+          <Fuel className="text-orange-500 w-5 h-5 md:w-6 md:h-6" />
         </div>
         <span>{id ? "ແກ້ໄຂຂໍ້ມູນ" : "ບັນທຶກການໃສ່ນ້ຳມັນ"}</span>
       </h2>

@@ -3,25 +3,26 @@ import React from "react";
 import { NavLink, useNavigate } from "react-router-dom";
 import {
   X,
-  Home,
-  Plus,
-  List,
-  Activity,
-  Map as MapIcon,
-  PlusCircle,
+  LayoutDashboard,
+  Fuel,
+  History,
+  BarChart3,
+  Map,
+  Route,
+  Store,
+  MapPin,
   Users,
   User,
   LogOut,
-  Route,
+  Truck, // <-- ເພີ່ມໄອຄອນ Truck ສຳລັບໂລໂກ້
 } from "lucide-react";
 import { useAuth } from "../../contexts/AuthContext";
-import { useAlert } from "../../contexts/AlertContext"; // <-- 1. Import useAlert ເຂົ້າມາ
+import { useAlert } from "../../contexts/AlertContext";
 
 export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
   const { user, logout, hasAccess } = useAuth();
   const navigate = useNavigate();
 
-  // --- 2. ເອີ້ນໃຊ້ Alert Context ສຳລັບ Popup ແຈ້ງເຕືອນ ---
   const alertContext = useAlert();
   const showConfirm =
     alertContext?.showConfirm ||
@@ -29,7 +30,6 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
       if (window.confirm(msg)) onConfirm();
     });
 
-  // --- 3. ປ່ຽນຈາກ window.confirm ມາໃຊ້ showConfirm ຂອງເຮົາ ---
   const handleLogout = () => {
     showConfirm(
       "ທ່ານຕ້ອງການອອກຈາກລະບົບແທ້ບໍ່?",
@@ -38,10 +38,9 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         navigate("/login");
       },
       "warning",
-    ); // ໃຊ້ type "warning" ເພື່ອໃຫ້ໄອຄອນເປັນແນວແຈ້ງເຕືອນ
+    );
   };
 
-  // ຟັງຊັ໋ນຊ່ວຍຈັດການ Class ຂອງ NavLink ເພື່ອສະແດງສີເມນູທີ່ຖືກເລືອກ
   const navLinkClass = ({ isActive }) =>
     `w-full flex items-center space-x-3 px-3 md:px-4 py-2.5 md:py-3 rounded-xl transition text-sm md:text-base ${
       isActive
@@ -55,11 +54,12 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
         sidebarOpen ? "translate-x-0" : "-translate-x-full"
       } md:translate-x-0 md:static md:inset-0 flex flex-col font-lao`}
     >
-      {/* --- ແກ້ໄຂ: ປັບຄວາມສູງສ່ວນເທິງ Sidebar ໃຫ້ເປັນ h-16 ຢ່າງແນ່ນອນ --- */}
+      {/* --- ສ່ວນຫົວ: ໂລໂກ້ ແລະ ຊື່ລະບົບ --- */}
       <div className="flex items-center justify-between h-16 px-4 md:px-6 bg-orange-500 text-white flex-shrink-0 w-full">
         <div className="flex items-center space-x-2 font-bold min-w-0 flex-1 pr-2">
+          {/* ເພີ່ມໂລໂກ້ລົດບັນທຸກຢູ່ບ່ອນນີ້ */}
+          <Truck className="w-5 h-5 md:w-6 md:h-6 shrink-0" />
           <span className="text-sm md:text-lg truncate">
-            {/* ອັບເດດຊື່ລະບົບຕາມທີ່ທ່ານຕັ້ງຄ່າ */}
             ລະບົບການຈັດການ ການຂົນສົ່ງ
           </span>
         </div>
@@ -78,7 +78,8 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
             onClick={() => setSidebarOpen(false)}
             className={navLinkClass}
           >
-            <Home className="w-4 h-4 md:w-5 md:h-5" /> <span>ໜ້າຫຼັກ</span>
+            <LayoutDashboard className="w-4 h-4 md:w-5 md:h-5" />{" "}
+            <span>ໜ້າຫຼັກ</span>
           </NavLink>
         )}
         {hasAccess("form") && (
@@ -87,7 +88,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
             onClick={() => setSidebarOpen(false)}
             className={navLinkClass}
           >
-            <Plus className="w-4 h-4 md:w-5 md:h-5" />{" "}
+            <Fuel className="w-4 h-4 md:w-5 md:h-5" />{" "}
             <span>ບັນທຶກໃສ່ນ້ຳມັນ</span>
           </NavLink>
         )}
@@ -97,7 +98,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
             onClick={() => setSidebarOpen(false)}
             className={navLinkClass}
           >
-            <List className="w-4 h-4 md:w-5 md:h-5" />{" "}
+            <History className="w-4 h-4 md:w-5 md:h-5" />{" "}
             <span>ປະຫວັດການເຕີມ</span>
           </NavLink>
         )}
@@ -107,7 +108,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
             onClick={() => setSidebarOpen(false)}
             className={navLinkClass}
           >
-            <Activity className="w-4 h-4 md:w-5 md:h-5" />{" "}
+            <BarChart3 className="w-4 h-4 md:w-5 md:h-5" />{" "}
             <span>ລາຍງານການເຕີມນ້ຳມັນ</span>
           </NavLink>
         )}
@@ -123,7 +124,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
               onClick={() => setSidebarOpen(false)}
               className={navLinkClass}
             >
-              <MapIcon className="w-4 h-4 md:w-5 md:h-5" />{" "}
+              <Map className="w-4 h-4 md:w-5 md:h-5" />{" "}
               <span>ແຜນທີ່ຮ້ານຄ້າ</span>
             </NavLink>
             {hasAccess("locationRoute") && (
@@ -142,7 +143,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                 onClick={() => setSidebarOpen(false)}
                 className={navLinkClass}
               >
-                <List className="w-4 h-4 md:w-5 md:h-5" />{" "}
+                <Store className="w-4 h-4 md:w-5 md:h-5" />{" "}
                 <span>ລາຍຊື່ຮ້ານຄ້າ</span>
               </NavLink>
             )}
@@ -152,7 +153,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
                 onClick={() => setSidebarOpen(false)}
                 className={navLinkClass}
               >
-                <PlusCircle className="w-4 h-4 md:w-5 md:h-5" />{" "}
+                <MapPin className="w-4 h-4 md:w-5 md:h-5" />{" "}
                 <span>ເພີ່ມຮ້ານຄ້າໃໝ່</span>
               </NavLink>
             )}

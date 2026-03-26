@@ -107,7 +107,7 @@ const CustomerSelect = ({ value, onChange, options, placeholder }) => {
             {filteredOptions.length > 0 ? (
               filteredOptions.map((opt) => (
                 <div
-                  key={opt.id}
+                  key={opt.id} // <-- ຖ້າ id ບໍ່ຊ້ຳກັນ, Error ນີ້ຈະຫາຍໄປ
                   className={`px-3 py-2.5 border-b border-gray-50 cursor-pointer transition ${opt.id === "CURRENT_LOCATION" ? "bg-blue-50/50 hover:bg-blue-100" : "hover:bg-orange-50"}`}
                   onClick={() => {
                     onChange(opt);
@@ -190,8 +190,10 @@ export default function RoutePlanner() {
                 lng = parts[1].trim();
               }
             }
+
             return {
-              id: String(row.id || index),
+              // --- ແກ້ໄຂ Error: ສ້າງ ID ທີ່ເປັນເອກະລັກສະເໝີ ໂດຍໃຊ້ index ປະກອບ ---
+              id: String(row.id || row["ລະຫັດລູກຄ້າ"] || `route-cust-${index}`),
               customerCode: getVal(["ລະຫັດ", "ລະຫັດລູກຄ້າ"]),
               customerName: getVal(["ລາຍຊື່ລູກຄ້າ", "ຊື່ລູກຄ້າ"]),
               village: getVal(["ບ້ານ"]),
@@ -429,14 +431,11 @@ export default function RoutePlanner() {
     if (validWps.length < 2)
       return showAlert("ກະລຸນາເລືອກຢ່າງໜ້ອຍ 2 ຈຸດ ທີ່ມີພິກັດ", "warning");
 
-    // ກຳນົດຈຸດເລີ່ມຕົ້ນ (Origin) ແລະ ຈຸດປາຍທາງ (Destination)
     const origin = `${validWps[0].lat},${validWps[0].lng}`;
     const destination = `${validWps[validWps.length - 1].lat},${validWps[validWps.length - 1].lng}`;
 
-    // ສ້າງ Link ມາດຕະຖານຂອງ Google Maps Directions
-    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
+    let url = `https://www.google.com/maps/dir/?api=1&origin=$${origin}&destination=${destination}`;
 
-    // ຖ້າມີຈຸດແວ່ (Waypoints) ເຄິ່ງກາງ ໃຫ້ເອົາໃສ່ເພີ່ມ
     if (validWps.length > 2) {
       const waypts = validWps
         .slice(1, -1)
@@ -445,12 +444,10 @@ export default function RoutePlanner() {
       url += `&waypoints=${waypts}`;
     }
 
-    // ເປີດແທັບໃໝ່ ໄປຫາແອັບ Google Maps
     window.open(url, "_blank");
   };
 
   return (
-    // --- ແກ້ໄຂ: ປ່ຽນຄວາມສູງເປັນ h-[calc(100vh-120px)] ເພື່ອໃຫ້ກ່ອງສັ້ນລົງ ---
     <div className="flex flex-col lg:flex-row h-[calc(100vh-120px)] gap-4 font-lao mb-4">
       {/* ດ້ານຊ້າຍ: ກ່ອງຈັດການເສັ້ນທາງ */}
       <div className="w-full lg:w-[400px] bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full">
@@ -482,8 +479,9 @@ export default function RoutePlanner() {
           )}
 
           {waypoints.map((wp, index) => (
+            // --- ແກ້ໄຂ: ໃຊ້ index ເປັນ key ຫຼັກສຳລັບ waypoints ປ້ອງກັນ error ---
             <div
-              key={index}
+              key={`wp-${index}`}
               className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200 relative group"
             >
               <div className="flex flex-col gap-1 items-center px-1">
