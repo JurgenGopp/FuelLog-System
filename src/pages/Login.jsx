@@ -150,7 +150,7 @@ export default function Login() {
 
       {/* --- Footer Main ຂອງລະບົບ --- */}
       <div className="w-full py-5 md:py-8 text-center z-20 bg-black/5 backdrop-blur-sm border-t border-white/10">
-        <p className="text-xs md:text-sm text-white/90 font-bold tracking-[0.2em]">
+        <p className="text-xs md:text-sm text-white/90 font-bold tracking-[0.1em]">
           &copy; {new Date().getFullYear()} P And P Trading Export-Import Co.,
           LTD
         </p>
