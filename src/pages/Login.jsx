@@ -14,14 +14,28 @@ export default function Login() {
   const navigate = useNavigate();
 
   useEffect(() => {
+    // ບັງຄັບໃຫ້ພື້ນຫຼັງເຕັມຈໍ ແລະ ກຳຈັດຂອບຂາວ
     document.body.style.margin = "0";
     document.body.style.padding = "0";
     document.body.style.overflow = "hidden";
+
+    // ປັບສີ Status Bar ຂອງມືຖື
+    const metaTheme = document.createElement("meta");
+    metaTheme.name = "theme-color";
+    metaTheme.content = "#f97316";
+    document.head.appendChild(metaTheme);
+
+    const metaApple = document.createElement("meta");
+    metaApple.name = "apple-mobile-web-app-status-bar-style";
+    metaApple.content = "black-translucent";
+    document.head.appendChild(metaApple);
 
     return () => {
       document.body.style.margin = "";
       document.body.style.padding = "";
       document.body.style.overflow = "";
+      if (metaTheme.parentNode) metaTheme.parentNode.removeChild(metaTheme);
+      if (metaApple.parentNode) metaApple.parentNode.removeChild(metaApple);
     };
   }, []);
 
@@ -57,25 +71,24 @@ export default function Login() {
         style={{ animationDelay: "2s" }}
       ></div>
 
-      {/* --- ສ່ວນເນື້ອຫາຫຼັກ --- */}
+      {/* --- ສ່ວນເນື້ອຫາຫຼັກ (ກ່ອງລັອກອິນ) --- */}
       <div className="flex-1 flex items-center justify-center p-4 z-10">
-        <div className="bg-white/70 backdrop-blur-3xl p-6 md:p-10 rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.25)] w-full max-w-[360px] md:max-w-[420px] border border-white/40 animate-in zoom-in-95 duration-500">
-          <div className="flex justify-center mb-5 md:mb-7">
+        <div className="bg-white/70 backdrop-blur-3xl p-6 md:p-8 rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.25)] w-full max-w-[360px] md:max-w-[380px] border border-white/40 animate-in zoom-in-95 duration-500">
+          <div className="flex justify-center mb-5 md:mb-6">
             <div className="p-2.5 bg-white rounded-2xl shadow-md border border-gray-100">
               <img
                 src={LOGO_URL}
                 alt="Logo"
-                className="h-14 md:h-20 object-contain rounded-lg"
+                className="h-14 md:h-16 object-contain rounded-lg"
               />
             </div>
           </div>
 
-          <div className="text-center mb-6 md:mb-8">
-            {/* ປັບຫົວຂໍ້ໃຫ້ໃຫຍ່ຂຶ້ນ */}
-            <h2 className="text-2xl md:text-4xl font-black text-gray-800 mb-1.5 tracking-tight uppercase">
+          <div className="text-center mb-6 md:mb-7">
+            <h2 className="text-2xl md:text-2xl font-black text-gray-800 mb-1.5 tracking-tight uppercase">
               ຍິນດີຕ້ອນຮັບ
             </h2>
-            <p className="text-xs md:text-base text-gray-600 font-bold italic">
+            <p className="text-xs md:text-sm text-gray-600 font-bold italic">
               ກະລຸນາເຂົ້າສູ່ລະບົບເພື່ອສືບຕໍ່
             </p>
           </div>
@@ -87,27 +100,25 @@ export default function Login() {
             </div>
           )}
 
-          <form onSubmit={handleLogin} className="space-y-4 md:space-y-6">
+          <form onSubmit={handleLogin} className="space-y-4 md:space-y-5">
             <div className="space-y-1.5">
-              {/* ປັບ Label ໃຫ້ໃຫຍ່ຂຶ້ນ */}
-              <label className="block text-xs md:text-sm font-black text-gray-700 ml-1 uppercase">
+              <label className="block text-xs font-black text-gray-700 ml-1 uppercase">
                 ຊື່ຜູ້ໃຊ້
               </label>
               <div className="relative">
                 <User className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
-                {/* ປັບ Input Text ໃຫ້ໃຫຍ່ຂຶ້ນ */}
                 <input
                   name="username"
                   type="text"
                   required
                   placeholder="ຊື່ຜູ້ໃຊ້"
-                  className="w-full h-12 md:h-14 pl-12 pr-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm md:text-lg font-bold"
+                  className="w-full h-12 md:h-12 pl-12 pr-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm md:text-sm font-bold"
                 />
               </div>
             </div>
 
             <div className="space-y-1.5">
-              <label className="block text-xs md:text-sm font-black text-gray-700 ml-1 uppercase">
+              <label className="block text-xs font-black text-gray-700 ml-1 uppercase">
                 ລະຫັດຜ່ານ
               </label>
               <div className="relative">
@@ -117,31 +128,30 @@ export default function Login() {
                   type="password"
                   required
                   placeholder="••••••••"
-                  className="w-full h-12 md:h-14 pl-12 pr-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm md:text-lg font-bold"
+                  className="w-full h-12 md:h-12 pl-12 pr-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm md:text-sm font-bold"
                 />
               </div>
             </div>
 
-            {/* ປັບປຸ່ມໃຫ້ໃຫຍ່ຂຶ້ນ */}
             <button
               type="submit"
               disabled={isLoading}
-              className="w-full h-12 md:h-14 mt-2 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-black rounded-2xl shadow-[0_10px_20px_rgba(249,115,22,0.4)] transition-all flex justify-center items-center gap-3 text-base md:text-xl uppercase"
+              className="w-full h-12 md:h-12 mt-2 bg-orange-500 hover:bg-orange-600 active:scale-95 text-white font-black rounded-2xl shadow-[0_10px_20px_rgba(249,115,22,0.4)] transition-all flex justify-center items-center gap-3 text-base md:text-base uppercase"
             >
               {isLoading ? (
                 <div className="w-6 h-6 border-3 border-white/30 border-t-white rounded-full animate-spin"></div>
               ) : (
                 <>
-                  <LogIn className="w-5 h-5 md:w-6 md:h-6" />
+                  <LogIn className="w-5 h-5 md:w-5 md:h-5" />
                   <span>ເຂົ້າສູ່ລະບົບ</span>
                 </>
               )}
             </button>
           </form>
 
-          {/* Footer ພາຍໃນກ່ອງ */}
-          <div className="mt-8 pt-5 border-t border-gray-100/50 text-center">
-            <p className="text-[10px] md:text-sm text-gray-500 font-bold uppercase tracking-widest">
+          {/* --- Footer ພາຍໃນກ່ອງ: ຈັດໃຫ້ຢູ່ເຄິ່ງກາງສົມສ່ວນ --- */}
+          <div className="mt-8 pt-5 border-t border-gray-100/50 flex justify-center items-center">
+            <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-[0.15em] text-center">
               &copy; {new Date().getFullYear()} ລະບົບຈັດການການຂົນສົ່ງ
             </p>
           </div>
@@ -149,10 +159,10 @@ export default function Login() {
       </div>
 
       {/* --- Footer Main ຂອງລະບົບ --- */}
-      <div className="w-full py-5 md:py-8 text-center z-20 bg-black/5 backdrop-blur-sm border-t border-white/10">
-        <p className="text-xs md:text-sm text-white/90 font-bold tracking-[0.1em]">
+      <div className="w-full py-5 md:py-6 text-center z-20 bg-black/5 backdrop-blur-sm border-t border-white/10">
+        <p className="text-xs md:text-xs text-white/90 font-bold uppercase tracking-[0.2em] flex justify-center items-center px-4">
           &copy; {new Date().getFullYear()} P And P Trading Export-Import Co.,
-          LTD
+          Ltd
         </p>
       </div>
     </div>

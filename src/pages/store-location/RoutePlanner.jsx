@@ -105,9 +105,9 @@ const CustomerSelect = ({ value, onChange, options, placeholder }) => {
           </div>
           <div className="max-h-60 overflow-y-auto">
             {filteredOptions.length > 0 ? (
-              filteredOptions.map((opt) => (
+              filteredOptions.map((opt, idx) => (
                 <div
-                  key={opt.id} // <-- ຖ້າ id ບໍ່ຊ້ຳກັນ, Error ນີ້ຈະຫາຍໄປ
+                  key={opt.id || `search-opt-${idx}`}
                   className={`px-3 py-2.5 border-b border-gray-50 cursor-pointer transition ${opt.id === "CURRENT_LOCATION" ? "bg-blue-50/50 hover:bg-blue-100" : "hover:bg-orange-50"}`}
                   onClick={() => {
                     onChange(opt);
@@ -192,7 +192,6 @@ export default function RoutePlanner() {
             }
 
             return {
-              // --- ແກ້ໄຂ Error: ສ້າງ ID ທີ່ເປັນເອກະລັກສະເໝີ ໂດຍໃຊ້ index ປະກອບ ---
               id: String(row.id || row["ລະຫັດລູກຄ້າ"] || `route-cust-${index}`),
               customerCode: getVal(["ລະຫັດ", "ລະຫັດລູກຄ້າ"]),
               customerName: getVal(["ລາຍຊື່ລູກຄ້າ", "ຊື່ລູກຄ້າ"]),
@@ -426,17 +425,21 @@ export default function RoutePlanner() {
     );
   };
 
+  // --- ຟັງຊັນທີ່ແກ້ໄຂແລ້ວ ສຳລັບເປີດໃນແອັບ ຫຼື ເວັບ Google Maps ຢ່າງຖືກຕ້ອງ ---
   const handleOpenGoogleMaps = () => {
     const validWps = waypoints.filter((wp) => wp !== null && wp.lat && wp.lng);
-    if (validWps.length < 2)
+    if (validWps.length < 2) {
       return showAlert("ກະລຸນາເລືອກຢ່າງໜ້ອຍ 2 ຈຸດ ທີ່ມີພິກັດ", "warning");
+    }
 
     const origin = `${validWps[0].lat},${validWps[0].lng}`;
     const destination = `${validWps[validWps.length - 1].lat},${validWps[validWps.length - 1].lng}`;
 
-    let url = `https://www.google.com/maps/dir/?api=1&origin=$${origin}&destination=${destination}`;
+    // ໃຊ້ API URL ມາດຕະຖານຂອງ Google Maps Directions
+    let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
 
     if (validWps.length > 2) {
+      // ຖ້າມີຈຸດແວ່ລະຫວ່າງກາງ (Waypoints)
       const waypts = validWps
         .slice(1, -1)
         .map((wp) => `${wp.lat},${wp.lng}`)
@@ -444,6 +447,7 @@ export default function RoutePlanner() {
       url += `&waypoints=${waypts}`;
     }
 
+    // ເປີດລິ້ງ
     window.open(url, "_blank");
   };
 
@@ -479,7 +483,6 @@ export default function RoutePlanner() {
           )}
 
           {waypoints.map((wp, index) => (
-            // --- ແກ້ໄຂ: ໃຊ້ index ເປັນ key ຫຼັກສຳລັບ waypoints ປ້ອງກັນ error ---
             <div
               key={`wp-${index}`}
               className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200 relative group"
