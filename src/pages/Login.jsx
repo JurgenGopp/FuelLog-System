@@ -19,29 +19,53 @@ export default function Login() {
     document.body.style.padding = "0";
     document.body.style.overflow = "hidden";
 
-    // 2. ສຳຄັນ: ປ່ຽນສີພື້ນຫຼັງຂອງ Body ໃຫ້ກົງກັບສີ from-orange-400 (#fb923c)
-    // ວິທີນີ້ຊ່ວຍແກ້ບັນຫາຂອບເທິງ-ລຸ່ມສີຂາວໃນ iPhone ໄດ້ 100%
+    // ປ່ຽນສີພື້ນຫຼັງຂອງ Body ໃຫ້ກົງກັບສີ from-orange-400 (#fb923c)
     document.body.style.backgroundColor = "#fb923c";
 
-    // 3. ປັບສີ Status Bar ຂອງມືຖື ໃຫ້ກົງກັບສີເທິງສຸດຂອງ Gradient
-    const metaTheme = document.createElement("meta");
-    metaTheme.name = "theme-color";
-    metaTheme.content = "#fb923c"; // ປ່ຽນມາໃຊ້ສີ #fb923c ໃຫ້ກົມກືນແທ້ໆ
-    document.head.appendChild(metaTheme);
+    // 2. ຄົ້ນຫາ Meta Tag ທີ່ມີຢູ່ແລ້ວແລ້ວອັບເດດຄ່າໃສ່ (ແກ້ບັນຫາແທັກຊ້ຳກັນ)
+    let metaTheme = document.querySelector("meta[name='theme-color']");
+    let existingThemeColor = "";
+    if (metaTheme) {
+      existingThemeColor = metaTheme.content;
+    } else {
+      metaTheme = document.createElement("meta");
+      metaTheme.name = "theme-color";
+      document.head.appendChild(metaTheme);
+    }
+    metaTheme.content = "#fb923c"; // ສີສົ້ມໃຫ້ກົມກືນແທ້ໆ
 
-    const metaApple = document.createElement("meta");
-    metaApple.name = "apple-mobile-web-app-status-bar-style";
+    let metaApple = document.querySelector(
+      "meta[name='apple-mobile-web-app-status-bar-style']",
+    );
+    let existingAppleStyle = "";
+    if (metaApple) {
+      existingAppleStyle = metaApple.content;
+    } else {
+      metaApple = document.createElement("meta");
+      metaApple.name = "apple-mobile-web-app-status-bar-style";
+      document.head.appendChild(metaApple);
+    }
     metaApple.content = "black-translucent";
-    document.head.appendChild(metaApple);
 
     return () => {
-      // ຄືນຄ່າທັງໝົດເມື່ອອອກຈາກໜ້າ Login
+      // ຄືນຄ່າທັງໝົດເມື່ອອອກຈາກໜ້າ Login ເພື່ອບໍ່ໃຫ້ກະທົບໜ້າອື່ນ
       document.body.style.margin = "";
       document.body.style.padding = "";
       document.body.style.overflow = "";
-      document.body.style.backgroundColor = ""; // ລ້າງສີພື້ນຫຼັງ
-      if (metaTheme.parentNode) metaTheme.parentNode.removeChild(metaTheme);
-      if (metaApple.parentNode) metaApple.parentNode.removeChild(metaApple);
+      document.body.style.backgroundColor = "";
+
+      // ຄືນຄ່າ Theme ໃຫ້ກັບເປັນຄ່າເດີມ
+      if (existingThemeColor) {
+        metaTheme.content = existingThemeColor;
+      } else {
+        metaTheme.remove();
+      }
+
+      if (existingAppleStyle) {
+        metaApple.content = existingAppleStyle;
+      } else {
+        metaApple.remove();
+      }
     };
   }, []);
 
@@ -69,7 +93,8 @@ export default function Login() {
   };
 
   return (
-    <div className="fixed inset-0 h-screen w-screen bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 font-lao overflow-hidden flex flex-col z-[9999]">
+    // ປ່ຽນ h-screen ເປັນ h-[100dvh] ເພື່ອໃຫ້ຮອງຮັບໜ້າຈໍມືຖືທີ່ສະແດງຜົນ Address Bar ແບບ Dynamic
+    <div className="fixed inset-0 h-[100dvh] w-screen bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 font-lao overflow-hidden flex flex-col z-[9999]">
       {/* Background Shapes */}
       <div className="absolute top-[-10%] left-[-10%] w-64 h-64 md:w-96 md:h-96 bg-white rounded-full mix-blend-overlay filter blur-[80px] md:blur-[120px] opacity-30 animate-pulse"></div>
       <div
@@ -166,7 +191,7 @@ export default function Login() {
 
       {/* --- Footer Main ຂອງລະບົບ --- */}
       <div className="w-full py-5 md:py-6 text-center z-20 bg-black/5 backdrop-blur-sm border-t border-white/10">
-        <p className="text-xs md:text-xs text-white/90 font-bold uppercase tracking-[0.2em] flex justify-center items-center px-4">
+        <p className="text-xs md:text-xs text-white/90 font-bold uppercase tracking-[0.15em] flex justify-center items-center px-4">
           P And P Trading Export-Import Co.,Ltd &copy;{" "}
           {new Date().getFullYear()}
         </p>

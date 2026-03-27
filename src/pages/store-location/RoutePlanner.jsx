@@ -4,13 +4,13 @@ import {
   Search,
   X,
   MapPin,
-  Navigation,
+  Route,
   Plus,
   ChevronUp,
   ChevronDown,
   Wand2,
   Map as MapIcon,
-  Trash2,
+  Eraser,
 } from "lucide-react";
 import { LOCATION_GAS_URL, GOOGLE_MAPS_API_KEY } from "../../api/config";
 import { useAlert } from "../../contexts/AlertContext";
@@ -53,19 +53,21 @@ const CustomerSelect = ({ value, onChange, options, placeholder }) => {
 
   return (
     <div className="relative w-full" ref={containerRef}>
+      {/* ປັບຄວາມສູງໃຫ້ໃຫຍ່ຂຶ້ນອີກໜ້ອຍໜຶ່ງ (min-h-[44px]) */}
       <div
-        className="w-full min-h-[48px] px-3 py-2 border border-gray-300 rounded-xl bg-white flex justify-between items-center cursor-pointer focus-within:ring-2 focus-within:ring-orange-500"
+        className="w-full min-h-[44px] md:min-h-[48px] px-3 py-1.5 md:py-2 border border-gray-300 rounded-xl bg-white flex justify-between items-center cursor-pointer focus-within:ring-2 focus-within:ring-orange-500"
         onClick={() => setIsOpen(!isOpen)}
       >
         <div className="flex-1 truncate pr-2">
           {value ? (
             <div className="flex flex-col">
+              {/* ປັບຕົວໜັງສືເປັນ text-sm */}
               <span
-                className={`text-sm font-bold truncate ${value.id === "CURRENT_LOCATION" ? "text-blue-600" : "text-gray-800"}`}
+                className={`text-sm md:text-sm font-bold truncate ${value.id === "CURRENT_LOCATION" ? "text-blue-600" : "text-gray-800"}`}
               >
                 {value.customerName}
               </span>
-              <span className="text-[10px] text-gray-500 truncate">
+              <span className="text-[10px] md:text-[11px] text-gray-500 truncate">
                 {value.id === "CURRENT_LOCATION"
                   ? `ສະຖານະ: ${value.village}`
                   : `ລະຫັດ: ${value.customerCode} | ${value.village}, ${value.district}`}
@@ -85,10 +87,10 @@ const CustomerSelect = ({ value, onChange, options, placeholder }) => {
             }}
             className="p-1 hover:bg-gray-100 rounded-full"
           >
-            <X size={16} className="text-gray-400" />
+            <X className="w-4 h-4 text-gray-400" />
           </button>
         ) : (
-          <Search size={16} className="text-gray-400" />
+          <Search className="w-4 h-4 text-gray-400" />
         )}
       </div>
 
@@ -103,7 +105,7 @@ const CustomerSelect = ({ value, onChange, options, placeholder }) => {
               onChange={(e) => setSearchTerm(e.target.value)}
             />
           </div>
-          <div className="max-h-60 overflow-y-auto">
+          <div className="max-h-52 md:max-h-60 overflow-y-auto">
             {filteredOptions.length > 0 ? (
               filteredOptions.map((opt, idx) => (
                 <div
@@ -120,7 +122,7 @@ const CustomerSelect = ({ value, onChange, options, placeholder }) => {
                   >
                     {opt.customerName}
                   </div>
-                  <div className="text-xs text-gray-500 flex justify-between">
+                  <div className="text-[11px] md:text-xs text-gray-500 flex justify-between">
                     <span>
                       {opt.id === "CURRENT_LOCATION"
                         ? opt.village
@@ -425,7 +427,6 @@ export default function RoutePlanner() {
     );
   };
 
-  // --- ຟັງຊັນທີ່ແກ້ໄຂແລ້ວ ສຳລັບເປີດໃນແອັບ ຫຼື ເວັບ Google Maps ຢ່າງຖືກຕ້ອງ ---
   const handleOpenGoogleMaps = () => {
     const validWps = waypoints.filter((wp) => wp !== null && wp.lat && wp.lng);
     if (validWps.length < 2) {
@@ -435,11 +436,9 @@ export default function RoutePlanner() {
     const origin = `${validWps[0].lat},${validWps[0].lng}`;
     const destination = `${validWps[validWps.length - 1].lat},${validWps[validWps.length - 1].lng}`;
 
-    // ໃຊ້ API URL ມາດຕະຖານຂອງ Google Maps Directions
     let url = `https://www.google.com/maps/dir/?api=1&origin=${origin}&destination=${destination}`;
 
     if (validWps.length > 2) {
-      // ຖ້າມີຈຸດແວ່ລະຫວ່າງກາງ (Waypoints)
       const waypts = validWps
         .slice(1, -1)
         .map((wp) => `${wp.lat},${wp.lng}`)
@@ -447,35 +446,37 @@ export default function RoutePlanner() {
       url += `&waypoints=${waypts}`;
     }
 
-    // ເປີດລິ້ງ
     window.open(url, "_blank");
   };
 
   return (
-    <div className="flex flex-col lg:flex-row h-[calc(100vh-120px)] gap-4 font-lao mb-4">
+    // ປັບຄວາມສູງເປັນ h-[calc(100dvh-130px)] ເພື່ອໃຫ້ກ່ອງສັ້ນລົງ ແລະ ປຸ່ມລຸ່ມສະແດງສະເໝີ
+    <div className="flex flex-col lg:flex-row h-[calc(100dvh-130px)] lg:h-[calc(100vh-120px)] gap-3 md:gap-4 font-lao mb-4">
       {/* ດ້ານຊ້າຍ: ກ່ອງຈັດການເສັ້ນທາງ */}
-      <div className="w-full lg:w-[400px] bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full">
-        <div className="p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50 rounded-t-2xl">
-          <h2 className="font-bold text-gray-800 flex items-center gap-2 text-lg">
-            <Navigation className="text-orange-500" /> ຄົ້ນຫາເສັ້ນທາງ
+      <div className="w-full lg:w-[400px] bg-white rounded-2xl shadow-sm border border-gray-100 flex flex-col h-full overflow-hidden">
+        {/* Header */}
+        <div className="p-3 md:p-4 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+          <h2 className="font-bold text-gray-800 flex items-center gap-2 text-[15px] md:text-lg">
+            <Route className="text-orange-500 w-5 h-5" /> ຄົ້ນຫາເສັ້ນທາງ
           </h2>
-          <div className="flex gap-2">
+          <div className="flex gap-1.5 md:gap-2">
             <button
               onClick={handleClearAll}
-              className="text-xs bg-red-50 text-red-600 font-bold px-3 py-1.5 rounded-lg hover:bg-red-100 transition flex items-center gap-1"
+              className="text-[11px] md:text-xs bg-red-50 text-red-600 font-bold px-2.5 py-1.5 rounded-lg hover:bg-red-100 transition flex items-center gap-1"
             >
-              <Trash2 size={14} /> ລ້າງ
+              <Eraser className="w-3.5 h-3.5" /> ລ້າງ
             </button>
             <button
               onClick={handleAutoSort}
-              className="text-xs bg-orange-100 text-orange-600 font-bold px-3 py-1.5 rounded-lg hover:bg-orange-200 transition flex items-center gap-1"
+              className="text-[11px] md:text-xs bg-orange-100 text-orange-600 font-bold px-2.5 py-1.5 rounded-lg hover:bg-orange-200 transition flex items-center gap-1"
             >
-              <Wand2 size={14} /> ລຽງ Auto
+              <Wand2 className="w-3.5 h-3.5" /> ຈັດລຽງເສັ້ນທາງ
             </button>
           </div>
         </div>
 
-        <div className="flex-1 overflow-y-auto p-4 space-y-3 relative">
+        {/* ລາຍການ (ສ່ວນທີ່ສາມາດ Scroll ໄດ້) */}
+        <div className="flex-1 overflow-y-auto p-2.5 md:p-4 space-y-2 relative">
           {isLoading && (
             <div className="absolute inset-0 bg-white/50 z-10 flex justify-center pt-10">
               <div className="animate-spin w-8 h-8 border-4 border-orange-500 border-t-transparent rounded-full"></div>
@@ -485,7 +486,7 @@ export default function RoutePlanner() {
           {waypoints.map((wp, index) => (
             <div
               key={`wp-${index}`}
-              className="flex items-center gap-2 bg-gray-50 p-2 rounded-xl border border-gray-200 relative group"
+              className="flex items-center gap-2 bg-gray-50 p-1.5 md:p-2 rounded-xl border border-gray-200 relative group"
             >
               <div className="flex flex-col gap-1 items-center px-1">
                 <button
@@ -493,7 +494,7 @@ export default function RoutePlanner() {
                   disabled={index === 0}
                   className="text-gray-400 hover:text-orange-500 disabled:opacity-30"
                 >
-                  <ChevronUp size={20} />
+                  <ChevronUp className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
                 <div className="w-6 h-6 rounded-full bg-gray-800 text-white flex items-center justify-center text-xs font-bold">
                   {index + 1}
@@ -503,7 +504,7 @@ export default function RoutePlanner() {
                   disabled={index === waypoints.length - 1}
                   className="text-gray-400 hover:text-orange-500 disabled:opacity-30"
                 >
-                  <ChevronDown size={20} />
+                  <ChevronDown className="w-4 h-4 md:w-5 md:h-5" />
                 </button>
               </div>
               <div className="flex-1 min-w-0">
@@ -518,33 +519,35 @@ export default function RoutePlanner() {
               </div>
               <button
                 onClick={() => removeWaypoint(index)}
-                className="p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
+                className="p-1.5 md:p-2 text-red-400 hover:text-red-600 hover:bg-red-50 rounded-lg"
               >
-                <X size={18} />
+                <X className="w-4 h-4 md:w-5 md:h-5" />
               </button>
             </div>
           ))}
 
           <button
             onClick={addWaypoint}
-            className="w-full py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold flex items-center justify-center gap-2 hover:bg-gray-50 hover:text-orange-500 hover:border-orange-300 transition mt-2"
+            className="w-full py-2.5 md:py-3 border-2 border-dashed border-gray-300 rounded-xl text-gray-500 font-bold flex items-center justify-center gap-2 text-sm hover:bg-gray-50 hover:text-orange-500 hover:border-orange-300 transition mt-1"
           >
-            <Plus size={20} /> ເພີ່ມຈຸດປາຍທາງ
+            <Plus className="w-4 h-4 md:w-5 md:h-5" /> ເພີ່ມຈຸດປາຍທາງ
           </button>
         </div>
 
-        <div className="p-4 border-t border-gray-100 bg-white rounded-b-2xl space-y-3">
+        {/* Footer (ປຸ່ມກົດ) ທີ່ຕິດຢູ່ລຸ່ມສະເໝີ */}
+        {/* ຫຼຸດ Padding ໃຫ້ປະຢັດພື້ນທີ່ */}
+        <div className="p-2.5 md:p-4 border-t border-gray-100 bg-white space-y-2 md:space-y-3 shrink-0">
           <button
             onClick={handleCalculateRoute}
-            className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-3.5 rounded-xl shadow-lg flex items-center justify-center gap-2 transition active:scale-95"
+            className="w-full bg-gray-800 hover:bg-gray-900 text-white font-bold py-2.5 md:py-3.5 rounded-xl shadow-md flex items-center justify-center gap-2 text-sm transition active:scale-95"
           >
-            <MapIcon size={20} /> ສະແດງໃນແຜນທີ່
+            <MapIcon className="w-4 h-4 md:w-5 md:h-5" /> ສະແດງໃນແຜນທີ່
           </button>
           <button
             onClick={handleOpenGoogleMaps}
-            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-3.5 rounded-xl shadow-lg shadow-orange-200 flex items-center justify-center gap-2 transition active:scale-95"
+            className="w-full bg-orange-500 hover:bg-orange-600 text-white font-bold py-2.5 md:py-3.5 rounded-xl shadow-md shadow-orange-200 flex items-center justify-center gap-2 text-sm transition active:scale-95"
           >
-            <MapPin size={20} /> ເປີດນຳທາງໃນ Google Maps
+            <MapPin className="w-4 h-4 md:w-5 md:h-5" /> ເປີດນຳທາງໃນ Google Maps
           </button>
         </div>
       </div>

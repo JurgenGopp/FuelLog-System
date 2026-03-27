@@ -1,5 +1,5 @@
 // src/pages/FuelList.jsx
-import React, { useState, useEffect, useMemo } from "react";
+import React, { useState, useEffect, useMemo, useRef } from "react";
 import { useNavigate } from "react-router-dom";
 import {
   Plus,
@@ -30,7 +30,6 @@ export default function FuelList() {
   const { user } = useAuth();
   const navigate = useNavigate();
 
-  // --- ແກ້ໄຂ Error ບ່ອນນີ້: ປ້ອງກັນເວັບລົ້ມ ຖ້າ App.jsx ຍັງບໍ່ໄດ້ໃສ່ AlertProvider ---
   const alertContext = useAlert();
   const showAlert = alertContext?.showAlert || ((msg) => alert(msg));
   const showConfirm =
@@ -42,6 +41,9 @@ export default function FuelList() {
   const [logs, setLogs] = useState([]);
   const [cars, setCars] = useState([]);
   const [isLoading, setIsLoading] = useState(true);
+
+  // --- State ສຳລັບຈັດການປຸ່ມລອຍ (FAB) ---
+  const [showFab, setShowFab] = useState(false);
 
   const [filterDate, setFilterDate] = useState("");
   const [filterPlate, setFilterPlate] = useState("");
@@ -82,13 +84,39 @@ export default function FuelList() {
     loadData();
   }, [user]);
 
+  // --- ຟັງຊັນກວດຈັບການເລື່ອນ (ແບບ Advance ທີ່ຈັບໄດ້ທຸກ Container) ---
+  useEffect(() => {
+    const handleScroll = (e) => {
+      // ດຶງຄ່າການເລື່ອນ (Scroll) ບໍ່ວ່າຈະເລື່ອນຈາກ window ຫຼັກ ຫຼື ຈາກກ່ອງ div ຍ່ອຍ
+      const target = e.target;
+      const scrollTop =
+        target.scrollTop ||
+        window.scrollY ||
+        document.documentElement.scrollTop ||
+        0;
+
+      // ຖ້າເລື່ອນລົງມາຫຼາຍກວ່າ 50px ໃຫ້ສະແດງປຸ່ມ
+      if (scrollTop > 50) {
+        setShowFab(true);
+      } else {
+        setShowFab(false);
+      }
+    };
+
+    // ໃສ່ , true ເພື່ອເປີດໃຊ້ງານ Capture phase ມັນຈະດັກຈັບ scroll ໄດ້ທັງໝົດ
+    window.addEventListener("scroll", handleScroll, true);
+
+    return () => {
+      window.removeEventListener("scroll", handleScroll, true);
+    };
+  }, []);
+
   const handleDelete = (id) => {
     showConfirm("ທ່ານຕ້ອງການລຶບຂໍ້ມູນການເຕີມນ້ຳມັນນີ້ແທ້ບໍ່?", async () => {
       setIsLoading(true);
       try {
         const res = await callApi({ action: "deleteLog", id });
         if (res.success !== false) {
-          // --- ແກ້ໄຂ: ໃຊ້ Prev State ເພື່ອປ້ອງກັນຂໍ້ມູນເກົ່າຄ້າງ ---
           setLogs((prevLogs) => prevLogs.filter((l) => l.id !== id));
           showAlert("ລຶບຂໍ້ມູນສຳເລັດ", "success");
         } else {
@@ -153,7 +181,7 @@ export default function FuelList() {
     );
 
   return (
-    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in slide-in-from-bottom-4 duration-300 font-lao">
+    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in slide-in-from-bottom-4 duration-300 font-lao relative min-h-screen md:min-h-0">
       {/* --- Header --- */}
       <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
         <h3 className="text-base md:text-lg font-bold text-gray-800 flex items-center space-x-2">
@@ -215,7 +243,7 @@ export default function FuelList() {
       </div>
 
       {/* --- Desktop Table View --- */}
-      <div className="hidden md:block overflow-x-auto p-2">
+      <div className="hidden md:block overflow-x-auto p-2 pb-24">
         <table className="w-full min-w-[950px] text-left text-sm text-gray-600 whitespace-nowrap relative">
           <thead className="bg-gray-50 text-gray-700 uppercase text-xs border-b border-gray-200">
             <tr>
@@ -339,7 +367,7 @@ export default function FuelList() {
       </div>
 
       {/* --- Mobile Card View --- */}
-      <div className="md:hidden flex flex-col gap-3 p-3 bg-gray-50/50">
+      <div className="md:hidden flex flex-col gap-3 p-3 bg-gray-50/50 pb-28">
         {sortedLogs.length > 0 ? (
           sortedLogs.map((log, index) => (
             <div
@@ -449,6 +477,17 @@ export default function FuelList() {
           </div>
         )}
       </div>
+
+      {/* --- Floating Action Button (FAB) ເພີ່ມໃໝ່ --- */}
+      {showFab && (
+        <button
+          onClick={() => navigate("/fuel/add")}
+          className="fixed bottom-24 right-5 md:bottom-24 md:right-10 z-[100] bg-orange-500 hover:bg-orange-600 text-white p-3.5 md:p-4 rounded-full shadow-[0_10px_35px_rgba(249,115,22,0.4)] transition-all duration-500 ease-out active:scale-95 animate-in fade-in zoom-in-75 slide-in-from-bottom-8 flex items-center justify-center"
+          title="ເພີ່ມໃໝ່"
+        >
+          <Plus className="w-6 h-6 md:w-7 md:h-7" strokeWidth={3} />
+        </button>
+      )}
     </div>
   );
 }

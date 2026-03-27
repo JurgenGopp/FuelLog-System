@@ -33,6 +33,10 @@ export default function ListView() {
   const [isLoading, setIsLoading] = useState(true);
   const [isDeleting, setIsDeleting] = useState(false);
 
+  // --- State ແລະ Ref ສຳລັບຈັດການປຸ່ມລອຍ ---
+  const [showFab, setShowFab] = useState(false);
+  const headerRef = useRef(null);
+
   const [searchKeyword, setSearchKeyword] = useState("");
   const searchTimeoutRef = useRef(null);
   const searchInputRef = useRef(null);
@@ -87,6 +91,26 @@ export default function ListView() {
 
   useEffect(() => {
     fetchCustomers();
+  }, []);
+
+  // --- ກວດຈັບການເລື່ອນໜ້າຈໍ ---
+  useEffect(() => {
+    const observer = new IntersectionObserver(
+      ([entry]) => {
+        setShowFab(!entry.isIntersecting);
+      },
+      { root: null, threshold: 0 },
+    );
+
+    if (headerRef.current) {
+      observer.observe(headerRef.current);
+    }
+
+    return () => {
+      if (headerRef.current) {
+        observer.unobserve(headerRef.current);
+      }
+    };
   }, []);
 
   const handleDelete = (id) => {
@@ -170,7 +194,7 @@ export default function ListView() {
   }, [customers, searchKeyword]);
 
   return (
-    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in slide-in-from-bottom-4 duration-300 font-lao mb-4 relative">
+    <div className="bg-white rounded-xl md:rounded-2xl shadow-sm border border-gray-100 overflow-hidden animate-in slide-in-from-bottom-4 duration-300 font-lao mb-4 relative min-h-screen md:min-h-0">
       {isDeleting && (
         <div className="fixed inset-0 z-[100] bg-black/20 backdrop-blur-sm flex justify-center items-center">
           <div className="bg-white px-8 py-6 rounded-2xl shadow-2xl flex flex-col items-center gap-4 animate-in zoom-in-95 duration-200">
@@ -182,8 +206,11 @@ export default function ListView() {
         </div>
       )}
 
-      {/* --- Header --- */}
-      <div className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50">
+      {/* --- Header (ຕິດ Ref ໄວ້ບ່ອນນີ້) --- */}
+      <div
+        ref={headerRef}
+        className="p-4 md:p-6 border-b border-gray-100 flex justify-between items-center bg-gray-50/50"
+      >
         <h3 className="text-base md:text-lg font-bold text-gray-800 flex items-center space-x-2">
           <Store className="w-5 h-5 text-orange-500" />{" "}
           <span>ລາຍຊື່ຮ້ານຄ້າທັງໝົດ</span>
@@ -236,7 +263,8 @@ export default function ListView() {
         </div>
       ) : (
         <>
-          <div className="hidden md:block overflow-x-auto p-2">
+          {/* ເພີ່ມ pb-24 ທີ່ນີ້ເພື່ອບໍ່ໃຫ້ແຖວສຸດທ້າຍຂອງຕາຕະລາງຖືກປຸ່ມລອຍບັງ */}
+          <div className="hidden md:block overflow-x-auto p-2 pb-24">
             <table className="w-full min-w-[1000px] text-left text-sm text-gray-600">
               <thead className="bg-gray-50 text-gray-700 uppercase text-xs border-b border-gray-200 whitespace-nowrap">
                 <tr>
@@ -288,7 +316,6 @@ export default function ListView() {
                       </td>
                       <td className="px-4 py-4 text-center whitespace-nowrap">
                         {c.lat && c.lng ? (
-                          /* --- ແກ້ໄຂລິ້ງ Google Maps ບ່ອນນີ້ --- */
                           <a
                             href={`https://www.google.com/maps?q=${c.lat},${c.lng}`}
                             target="_blank"
@@ -343,7 +370,7 @@ export default function ListView() {
           </div>
 
           {/* --- Mobile Card View --- */}
-          <div className="md:hidden flex flex-col gap-3 p-4 bg-gray-50/50">
+          <div className="md:hidden flex flex-col gap-3 p-4 bg-gray-50/50 pb-28">
             {filteredCustomers.length > 0 ? (
               filteredCustomers.map((c, index) => (
                 <div
@@ -400,7 +427,6 @@ export default function ListView() {
                   <div className="flex items-center justify-between mt-2 pt-3 border-t border-gray-100 pl-2">
                     <div>
                       {c.lat && c.lng ? (
-                        /* --- ແກ້ໄຂລິ້ງ Google Maps ບ່ອນນີ້ (ສຳລັບມືຖື) --- */
                         <a
                           href={`https://www.google.com/maps?q=${c.lat},${c.lng}`}
                           target="_blank"
@@ -446,6 +472,18 @@ export default function ListView() {
             )}
           </div>
         </>
+      )}
+
+      {/* --- Floating Action Button (FAB) --- */}
+      {user?.role === "admin" && showFab && (
+        <button
+          onClick={() => navigate("/location/add")}
+          /* ປ່ຽນ md:bottom-12 ເປັນ md:bottom-24 ເພື່ອບໍ່ໃຫ້ທັບ Footer ຂອງຄອມ */
+          className="fixed bottom-24 right-5 md:bottom-24 md:right-10 z-[100] bg-orange-500 hover:bg-orange-600 text-white p-3.5 md:p-4 rounded-full shadow-[0_10px_35px_rgba(249,115,22,0.4)] transition-all duration-500 ease-out active:scale-95 animate-in fade-in zoom-in-75 slide-in-from-bottom-8 flex items-center justify-center"
+          title="ເພີ່ມຮ້ານໃໝ່"
+        >
+          <Plus className="w-6 h-6 md:w-7 md:h-7" strokeWidth={3} />
+        </button>
       )}
     </div>
   );

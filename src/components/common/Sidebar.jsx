@@ -60,7 +60,7 @@ export default function Sidebar({ sidebarOpen, setSidebarOpen }) {
           {/* ເພີ່ມໂລໂກ້ລົດບັນທຸກຢູ່ບ່ອນນີ້ */}
           <Truck className="w-5 h-5 md:w-6 md:h-6 shrink-0" />
           <span className="text-sm md:text-lg truncate">
-            ລະບົບການຈັດການ ການຂົນສົ່ງ
+            ລະບົບຈັດການ ການຂົນສົ່ງ
           </span>
         </div>
         <button
