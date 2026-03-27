@@ -30,11 +30,11 @@ export default function Login() {
     return "Desktop (ຄອມພິວເຕີ)";
   };
 
-  // --- [ເພີ່ມໃໝ່] ຟັງຊັນດຶງພິກັດສະຖານທີ່ (GPS) ---
+  // --- ຟັງຊັນດຶງພິກັດສະຖານທີ່ (GPS) ---
   const getUserLocation = () => {
     return new Promise((resolve) => {
       if (!navigator.geolocation) {
-        return resolve({ lat: "", lng: "" }); // ຖ້າ Browser ບໍ່ຮອງຮັບ
+        return resolve({ lat: "", lng: "" });
       }
 
       navigator.geolocation.getCurrentPosition(
@@ -46,9 +46,9 @@ export default function Login() {
         },
         (err) => {
           console.warn("ບໍ່ສາມາດດຶງພິກັດໄດ້:", err);
-          resolve({ lat: "", lng: "" }); // ຖ້າຜູ້ໃຊ້ປະຕິເສດ ຫຼື ດຶງບໍ່ໄດ້
+          resolve({ lat: "", lng: "" });
         },
-        { timeout: 3000, maximumAge: 60000 }, // ລໍຖ້າສູງສຸດ 3 ວິນາທີ
+        { timeout: 3000, maximumAge: 60000 },
       );
     });
   };
@@ -111,18 +111,17 @@ export default function Login() {
     const username = e.target.username.value;
     const password = e.target.password.value;
 
-    // ດຶງຄ່າອຸປະກອນ
+    // ດຶງຄ່າອຸປະກອນ ແລະ ພິກັດ
     const currentDevice = getDeviceType();
-
-    // --- [ເພີ່ມໃໝ່] ດຶງຄ່າພິກັດສະຖານທີ່ (ອາດຈະໃຊ້ເວລາປະມານ 1-3 ວິນາທີ) ---
     const location = await getUserLocation();
 
+    // ສົ່ງຂໍ້ມູນໄປກວດສອບທີ່ Backend
     const res = await callApi({ action: "login", username, password });
 
     if (res.success && res.user) {
       login(res.user);
 
-      // --- ບັນທຶກປະຫວັດ Login ສຳເລັດ ພ້ອມພິກັດ ---
+      // --- ບັນທຶກປະຫວັດ Login ສຳເລັດ ---
       try {
         callApi({
           action: "addLoginLog",
@@ -130,8 +129,8 @@ export default function Login() {
           role: res.user.role,
           status: "ເຂົ້າສູ່ລະບົບສຳເລັດ",
           device: currentDevice,
-          lat: location.lat, // ສົ່ງ Latitude
-          lng: location.lng, // ສົ່ງ Longitude
+          lat: location.lat,
+          lng: location.lng,
         });
       } catch (err) {
         console.error("Failed to log login history", err);
@@ -143,8 +142,10 @@ export default function Login() {
         navigate("/dashboard");
       }
     } else {
+      // ສະແດງຂໍ້ຄວາມແຈ້ງເຕືອນຢູ່ໜ້າຈໍ
       setError(res.message || "ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ");
 
+      // --- [ແກ້ໄຂຫຼັກ] ກຳນົດສະຖານະ Log ຕາມ errorType ທີ່ Backend ສົ່ງມາ ---
       let logStatus = "ເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ";
       if (res.errorType === "WRONG_USERNAME") {
         logStatus = "ເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ (ຊື່ຜູ້ໃຊ້ຜິດ)";
@@ -152,7 +153,7 @@ export default function Login() {
         logStatus = "ເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ (ລະຫັດຜິດ)";
       }
 
-      // --- ບັນທຶກປະຫວັດ Login ຜິດພາດ ພ້ອມພິກັດ ---
+      // --- ບັນທຶກປະຫວັດ Login ຜິດພາດ ລົງໃນ Google Sheets ---
       try {
         callApi({
           action: "addLoginLog",
@@ -160,8 +161,8 @@ export default function Login() {
           role: "-",
           status: logStatus,
           device: currentDevice,
-          lat: location.lat, // ສົ່ງ Latitude
-          lng: location.lng, // ສົ່ງ Longitude
+          lat: location.lat,
+          lng: location.lng,
         });
       } catch (err) {
         console.error("Failed to log login history", err);
