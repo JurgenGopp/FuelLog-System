@@ -19,10 +19,10 @@ export default function Login() {
     document.body.style.padding = "0";
     document.body.style.overflow = "hidden";
 
-    // ປ່ຽນສີພື້ນຫຼັງຂອງ Body ໃຫ້ກົງກັບສີ from-orange-400 (#fb923c)
-    document.body.style.backgroundColor = "#fb923c";
+    // 2. ປ່ຽນສີພື້ນຫຼັງຂອງ Body ໃຫ້ກົງກັບສີຫຼັກ orange-500 (#f97316)
+    document.body.style.backgroundColor = "#f97316";
 
-    // 2. ຄົ້ນຫາ Meta Tag ທີ່ມີຢູ່ແລ້ວແລ້ວອັບເດດຄ່າໃສ່ (ແກ້ບັນຫາແທັກຊ້ຳກັນ)
+    // 3. ຄົ້ນຫາ Meta Tag ທີ່ມີຢູ່ແລ້ວແລ້ວອັບເດດຄ່າໃສ່
     let metaTheme = document.querySelector("meta[name='theme-color']");
     let existingThemeColor = "";
     if (metaTheme) {
@@ -32,7 +32,8 @@ export default function Login() {
       metaTheme.name = "theme-color";
       document.head.appendChild(metaTheme);
     }
-    metaTheme.content = "#fb923c"; // ສີສົ້ມໃຫ້ກົມກືນແທ້ໆ
+    // ໃຊ້ສີສົ້ມຫຼັກ #f97316
+    metaTheme.content = "#f97316";
 
     let metaApple = document.querySelector(
       "meta[name='apple-mobile-web-app-status-bar-style']",
@@ -48,13 +49,12 @@ export default function Login() {
     metaApple.content = "black-translucent";
 
     return () => {
-      // ຄືນຄ່າທັງໝົດເມື່ອອອກຈາກໜ້າ Login ເພື່ອບໍ່ໃຫ້ກະທົບໜ້າອື່ນ
+      // ຄືນຄ່າທັງໝົດເມື່ອອອກຈາກໜ້າ Login
       document.body.style.margin = "";
       document.body.style.padding = "";
       document.body.style.overflow = "";
       document.body.style.backgroundColor = "";
 
-      // ຄືນຄ່າ Theme ໃຫ້ກັບເປັນຄ່າເດີມ
       if (existingThemeColor) {
         metaTheme.content = existingThemeColor;
       } else {
@@ -93,12 +93,12 @@ export default function Login() {
   };
 
   return (
-    // ປ່ຽນ h-screen ເປັນ h-[100dvh] ເພື່ອໃຫ້ຮອງຮັບໜ້າຈໍມືຖືທີ່ສະແດງຜົນ Address Bar ແບບ Dynamic
-    <div className="fixed inset-0 h-[100dvh] w-screen bg-gradient-to-br from-orange-400 via-orange-500 to-orange-600 font-lao overflow-hidden flex flex-col z-[9999]">
+    // ປ່ຽນ Gradient ເປັນ bg-gradient-to-b (ເທິງລົງລຸ່ມ) ຈາກ orange-500 ຫາ orange-300
+    <div className="fixed inset-0 h-[100dvh] w-screen bg-gradient-to-b from-orange-500 via-orange-400 to-orange-300 font-lao overflow-hidden flex flex-col z-[9999]">
       {/* Background Shapes */}
       <div className="absolute top-[-10%] left-[-10%] w-64 h-64 md:w-96 md:h-96 bg-white rounded-full mix-blend-overlay filter blur-[80px] md:blur-[120px] opacity-30 animate-pulse"></div>
       <div
-        className="absolute bottom-[-10%] right-[-10%] w-64 h-64 md:w-96 md:h-96 bg-orange-800 rounded-full mix-blend-multiply filter blur-[80px] md:blur-[120px] opacity-40 animate-pulse"
+        className="absolute bottom-[-10%] right-[-10%] w-64 h-64 md:w-96 md:h-96 bg-orange-800 rounded-full mix-blend-multiply filter blur-[80px] md:blur-[120px] opacity-20 animate-pulse"
         style={{ animationDelay: "2s" }}
       ></div>
 
@@ -191,7 +191,7 @@ export default function Login() {
 
       {/* --- Footer Main ຂອງລະບົບ --- */}
       <div className="w-full py-5 md:py-6 text-center z-20 bg-black/5 backdrop-blur-sm border-t border-white/10">
-        <p className="text-xs md:text-xs text-white/90 font-bold uppercase tracking-[0.15em] flex justify-center items-center px-4">
+        <p className="text-xs md:text-xs text-white/90 font-bold uppercase tracking-[0.12em] flex justify-center items-center px-4">
           P And P Trading Export-Import Co.,Ltd &copy;{" "}
           {new Date().getFullYear()}
         </p>
