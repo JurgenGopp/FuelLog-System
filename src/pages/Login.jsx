@@ -81,6 +81,20 @@ export default function Login() {
 
     if (res.success && res.user) {
       login(res.user);
+
+      // --- [ເພີ່ມໃໝ່] ບັນທຶກປະຫວັດ Login ສຳເລັດ ---
+      try {
+        callApi({
+          action: "addLoginLog",
+          username: res.user.username || username,
+          role: res.user.role,
+          status: "ເຂົ້າສູ່ລະບົບສຳເລັດ",
+        });
+      } catch (err) {
+        console.error("Failed to log login history", err);
+      }
+      // ----------------------------------------
+
       if (res.user.role === "driver") {
         navigate("/fuel/add");
       } else {
@@ -88,6 +102,19 @@ export default function Login() {
       }
     } else {
       setError(res.message || "ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ");
+
+      // --- [ເພີ່ມໃໝ່] ບັນທຶກປະຫວັດ Login ຜິດພາດ ---
+      try {
+        callApi({
+          action: "addLoginLog",
+          username: username,
+          role: "-",
+          status: "ເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ (ລະຫັດຜິດ)",
+        });
+      } catch (err) {
+        console.error("Failed to log login history", err);
+      }
+      // ----------------------------------------
     }
     setIsLoading(false);
   };
