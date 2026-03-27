@@ -3,26 +3,62 @@ import React, { useState, useEffect } from "react";
 import { useNavigate } from "react-router-dom";
 import { useAuth } from "../contexts/AuthContext";
 import { callApi } from "../api/config";
-import { User, Lock, LogIn, AlertCircle } from "lucide-react";
+import { User, Lock, LogIn, AlertCircle, Eye, EyeOff } from "lucide-react";
 
 import LOGO_URL from "/Logo_P&P.jpg";
 
 export default function Login() {
   const [isLoading, setIsLoading] = useState(false);
   const [error, setError] = useState("");
+  const [showPassword, setShowPassword] = useState(false);
   const { login } = useAuth();
   const navigate = useNavigate();
 
+  // --- ຟັງຊັນກວດຈັບປະເພດອຸປະກອນ ---
+  const getDeviceType = () => {
+    const ua = navigator.userAgent;
+    if (/(tablet|ipad|playbook|silk)|(android(?!.*mobi))/i.test(ua)) {
+      return "Tablet (ແທັບເລັດ)";
+    }
+    if (
+      /Mobile|iP(hone|od)|Android|BlackBerry|IEMobile|Kindle|Silk-Accelerated|(hpw|web)OS|Opera M(obi|ini)/.test(
+        ua,
+      )
+    ) {
+      return "Mobile (ມືຖື)";
+    }
+    return "Desktop (ຄອມພິວເຕີ)";
+  };
+
+  // --- [ເພີ່ມໃໝ່] ຟັງຊັນດຶງພິກັດສະຖານທີ່ (GPS) ---
+  const getUserLocation = () => {
+    return new Promise((resolve) => {
+      if (!navigator.geolocation) {
+        return resolve({ lat: "", lng: "" }); // ຖ້າ Browser ບໍ່ຮອງຮັບ
+      }
+
+      navigator.geolocation.getCurrentPosition(
+        (position) => {
+          resolve({
+            lat: position.coords.latitude,
+            lng: position.coords.longitude,
+          });
+        },
+        (err) => {
+          console.warn("ບໍ່ສາມາດດຶງພິກັດໄດ້:", err);
+          resolve({ lat: "", lng: "" }); // ຖ້າຜູ້ໃຊ້ປະຕິເສດ ຫຼື ດຶງບໍ່ໄດ້
+        },
+        { timeout: 3000, maximumAge: 60000 }, // ລໍຖ້າສູງສຸດ 3 ວິນາທີ
+      );
+    });
+  };
+
   useEffect(() => {
-    // 1. ບັງຄັບໃຫ້ພື້ນຫຼັງເຕັມຈໍ ແລະ ກຳຈັດຂອບຂາວ
     document.body.style.margin = "0";
     document.body.style.padding = "0";
     document.body.style.overflow = "hidden";
-
-    // 2. ປ່ຽນສີພື້ນຫຼັງຂອງ Body ໃຫ້ກົງກັບສີຫຼັກ orange-500 (#f97316)
     document.body.style.backgroundColor = "#f97316";
 
-    // 3. ຄົ້ນຫາ Meta Tag ທີ່ມີຢູ່ແລ້ວແລ້ວອັບເດດຄ່າໃສ່
     let metaTheme = document.querySelector("meta[name='theme-color']");
     let existingThemeColor = "";
     if (metaTheme) {
@@ -32,7 +68,6 @@ export default function Login() {
       metaTheme.name = "theme-color";
       document.head.appendChild(metaTheme);
     }
-    // ໃຊ້ສີສົ້ມຫຼັກ #f97316
     metaTheme.content = "#f97316";
 
     let metaApple = document.querySelector(
@@ -49,7 +84,6 @@ export default function Login() {
     metaApple.content = "black-translucent";
 
     return () => {
-      // ຄືນຄ່າທັງໝົດເມື່ອອອກຈາກໜ້າ Login
       document.body.style.margin = "";
       document.body.style.padding = "";
       document.body.style.overflow = "";
@@ -77,23 +111,31 @@ export default function Login() {
     const username = e.target.username.value;
     const password = e.target.password.value;
 
+    // ດຶງຄ່າອຸປະກອນ
+    const currentDevice = getDeviceType();
+
+    // --- [ເພີ່ມໃໝ່] ດຶງຄ່າພິກັດສະຖານທີ່ (ອາດຈະໃຊ້ເວລາປະມານ 1-3 ວິນາທີ) ---
+    const location = await getUserLocation();
+
     const res = await callApi({ action: "login", username, password });
 
     if (res.success && res.user) {
       login(res.user);
 
-      // --- [ເພີ່ມໃໝ່] ບັນທຶກປະຫວັດ Login ສຳເລັດ ---
+      // --- ບັນທຶກປະຫວັດ Login ສຳເລັດ ພ້ອມພິກັດ ---
       try {
         callApi({
           action: "addLoginLog",
           username: res.user.username || username,
           role: res.user.role,
           status: "ເຂົ້າສູ່ລະບົບສຳເລັດ",
+          device: currentDevice,
+          lat: location.lat, // ສົ່ງ Latitude
+          lng: location.lng, // ສົ່ງ Longitude
         });
       } catch (err) {
         console.error("Failed to log login history", err);
       }
-      // ----------------------------------------
 
       if (res.user.role === "driver") {
         navigate("/fuel/add");
@@ -103,33 +145,39 @@ export default function Login() {
     } else {
       setError(res.message || "ຊື່ຜູ້ໃຊ້ ຫຼື ລະຫັດຜ່ານບໍ່ຖືກຕ້ອງ");
 
-      // --- [ເພີ່ມໃໝ່] ບັນທຶກປະຫວັດ Login ຜິດພາດ ---
+      let logStatus = "ເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ";
+      if (res.errorType === "WRONG_USERNAME") {
+        logStatus = "ເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ (ຊື່ຜູ້ໃຊ້ຜິດ)";
+      } else if (res.errorType === "WRONG_PASSWORD") {
+        logStatus = "ເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ (ລະຫັດຜິດ)";
+      }
+
+      // --- ບັນທຶກປະຫວັດ Login ຜິດພາດ ພ້ອມພິກັດ ---
       try {
         callApi({
           action: "addLoginLog",
           username: username,
           role: "-",
-          status: "ເຂົ້າສູ່ລະບົບລົ້ມເຫຼວ (ລະຫັດຜິດ)",
+          status: logStatus,
+          device: currentDevice,
+          lat: location.lat, // ສົ່ງ Latitude
+          lng: location.lng, // ສົ່ງ Longitude
         });
       } catch (err) {
         console.error("Failed to log login history", err);
       }
-      // ----------------------------------------
     }
     setIsLoading(false);
   };
 
   return (
-    // ປ່ຽນ Gradient ເປັນ bg-gradient-to-b (ເທິງລົງລຸ່ມ) ຈາກ orange-500 ຫາ orange-300
     <div className="fixed inset-0 h-[100dvh] w-screen bg-gradient-to-b from-orange-500 via-orange-400 to-orange-300 font-lao overflow-hidden flex flex-col z-[9999]">
-      {/* Background Shapes */}
       <div className="absolute top-[-10%] left-[-10%] w-64 h-64 md:w-96 md:h-96 bg-white rounded-full mix-blend-overlay filter blur-[80px] md:blur-[120px] opacity-30 animate-pulse"></div>
       <div
         className="absolute bottom-[-10%] right-[-10%] w-64 h-64 md:w-96 md:h-96 bg-orange-800 rounded-full mix-blend-multiply filter blur-[80px] md:blur-[120px] opacity-20 animate-pulse"
         style={{ animationDelay: "2s" }}
       ></div>
 
-      {/* --- ສ່ວນເນື້ອຫາຫຼັກ (ກ່ອງລັອກອິນ) --- */}
       <div className="flex-1 flex items-center justify-center p-4 z-10">
         <div className="bg-white/70 backdrop-blur-3xl p-6 md:p-8 rounded-[2.5rem] shadow-[0_30px_70px_rgba(0,0,0,0.25)] w-full max-w-[360px] md:max-w-[380px] border border-white/40 animate-in zoom-in-95 duration-500">
           <div className="flex justify-center mb-5 md:mb-6">
@@ -181,13 +229,26 @@ export default function Login() {
               </label>
               <div className="relative">
                 <Lock className="absolute left-4 top-1/2 -translate-y-1/2 w-5 h-5 text-gray-400" />
+
                 <input
                   name="password"
-                  type="password"
+                  type={showPassword ? "text" : "password"}
                   required
                   placeholder="••••••••"
-                  className="w-full h-12 md:h-12 pl-12 pr-4 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm md:text-sm font-bold"
+                  className="w-full h-12 md:h-12 pl-12 pr-12 bg-gray-50/50 border border-gray-200 rounded-2xl focus:ring-4 focus:ring-orange-500/20 focus:border-orange-500 outline-none transition-all text-sm md:text-sm font-bold"
                 />
+
+                <button
+                  type="button"
+                  onClick={() => setShowPassword(!showPassword)}
+                  className="absolute right-4 top-1/2 -translate-y-1/2 text-gray-400 hover:text-orange-500 focus:outline-none transition-colors"
+                >
+                  {showPassword ? (
+                    <EyeOff className="w-5 h-5" />
+                  ) : (
+                    <Eye className="w-5 h-5" />
+                  )}
+                </button>
               </div>
             </div>
 
@@ -207,7 +268,6 @@ export default function Login() {
             </button>
           </form>
 
-          {/* --- Footer ພາຍໃນກ່ອງ: ຈັດໃຫ້ຢູ່ເຄິ່ງກາງສົມສ່ວນ --- */}
           <div className="mt-8 pt-5 border-t border-gray-100/50 flex justify-center items-center">
             <p className="text-[10px] md:text-xs text-gray-400 font-bold uppercase tracking-[0.15em] text-center">
               &copy; {new Date().getFullYear()} ລະບົບຈັດການການຂົນສົ່ງ
@@ -216,9 +276,8 @@ export default function Login() {
         </div>
       </div>
 
-      {/* --- Footer Main ຂອງລະບົບ --- */}
       <div className="w-full py-5 md:py-6 text-center z-20 bg-black/5 backdrop-blur-sm border-t border-white/10">
-        <p className="text-xs md:text-xs text-white/90 font-bold uppercase tracking-[0.12em] flex justify-center items-center px-4">
+        <p className="text-xs md:text-xs text-white/90 font-bold tracking-[0.15em] flex justify-center items-center px-4">
           P And P Trading Export-Import Co.,Ltd &copy;{" "}
           {new Date().getFullYear()}
         </p>

@@ -35,7 +35,7 @@ export const AuthProvider = ({ children }) => {
 
   // --- ສ່ວນທີ່ເພີ່ມໃໝ່: ລະບົບ Auto Logout ---
   const timerRef = useRef(null);
-  const INACTIVITY_LIMIT = 60 * 60 * 1000; // 1 ຊົ່ວໂມງ
+  const INACTIVITY_LIMIT = 30 * 60 * 1000; // 1 ຊົ່ວໂມງ
 
   const logout = () => {
     setUser(null);
